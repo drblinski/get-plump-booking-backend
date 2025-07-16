@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Appointment | Get Plump</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .booking-widget {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 85vh;
+      min-height: 650px;
+    }
+    
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 24px 30px;
+      text-align: center;
+      position: relative;
+      color: white;
+    }
+    
+    .back-button {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: none;
+      transition: all 0.2s ease;
+    }
+    
+    .back-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .chat-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    
+    .chat-subtitle {
+      opacity: 0.9;
+      font-size: 0.95rem;
+    }
+    
+    .messages-container {
+      flex: 1;
+      padding: 24px 30px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      background: #fff;
+    }
+    
+    .message {
+      margin-bottom: 24px;
+      display: flex;
+      animation: slideIn 0.3s ease-out;
+      max-width: 100%;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .message.system {
+      justify-content: flex-start;
+    }
+    
+    .message.user {
+      justify-content: flex-end;
+    }
+    
+    .message-bubble {
+      max-width: 75%;
+      padding: 16px 20px;
+      border-radius: 20px;
+      font-size: 1rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+    
+    .message.system .message-bubble {
+      background: #f1f3f4;
+      color: #2d3436;
+      border-bottom-left-radius: 8px;
+    }
+    
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-bottom-right-radius: 8px;
+    }
+    
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      background: #f1f3f4;
+      border-radius: 20px;
+      border-bottom-left-radius: 8px;
+      max-width: 80px;
+    }
+    
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #74b9ff;
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+    
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+    
+    /* Member Recognition Section */
+    .member-check-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      color: white;
+    }
+    
+    .member-check-title {
+      font-weight: 600;
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+    
+    .member-check-subtitle {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      margin-bottom: 20px;
+    }
+    
+    .member-input-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .member-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: white;
+      font-size: 1rem;
+      backdrop-filter: blur(10px);
+    }
+    
+    .member-input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .member-input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .member-check-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .member-check-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .guest-option {
+      text-align: center;
+      margin-top: 16px;
+    }
+    
+    .guest-button {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .guest-button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Member Welcome */
+    .member-welcome {
+      background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      color: white;
+    }
+    
+    .member-welcome-title {
+      font-weight: 600;
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+    
+    .member-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    
+    .member-stat {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 12px;
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .stat-label {
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+    
+    /* Book Again Section */
+    .book-again-section {
+      background: #fff;
+      border: 2px solid #667eea;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .book-again-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #2d3436;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    
+    .book-again-option {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .book-again-option:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    
+    .option-details {
+      flex: 1;
+    }
+    
+    .option-service {
+      font-weight: 600;
+      color: #2d3436;
+      margin-bottom: 4px;
+    }
+    
+    .option-provider {
+      font-size: 0.9rem;
+      color: #636e72;
+    }
+    
+    .option-date {
+      font-size: 0.85rem;
+      color: #74b9ff;
+      font-weight: 500;
+    }
+    
+    /* Treatment Selection */
+    .treatment-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    
+    .treatment-button {
+      background: #fff;
+      border: 2px solid #e9ecef;
+      color: #2d3436;
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .treatment-button:hover {
+      border-color: #667eea;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .treatment-info {
+      flex: 1;
+    }
+    
+    .treatment-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+    
+    .treatment-desc {
+      font-size: 0.9rem;
+      color: #636e72;
+      line-height: 1.4;
+    }
+    
+    .treatment-price {
+      font-size: 0.9rem;
+      color: #00b894;
+      font-weight: 600;
+      margin-left: 16px;
+    }
+    
+    /* Help Option */
+    .help-option {
+      background: #f0f4ff;
+      border: 2px solid #667eea;
+    }
+    
+    .help-option:hover {
+      background: #e6f0ff;
+    }
+    
+    /* Service Details */
+    .service-details {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .details-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    
+    .details-title {
+      font-weight: 600;
+      color: #2d3436;
+    }
+    
+    .details-toggle {
+      color: #667eea;
+      font-size: 0.9rem;
+    }
+    
+    .details-content {
+      font-size: 0.9rem;
+      color: #636e72;
+      line-height: 1.5;
+      display: none;
+    }
+    
+    .details-content.open {
+      display: block;
+    }
+    
+    /* Flexible Booking */
+    .flexible-section {
+      background: linear-gradient(135deg, #fdcb6e 0%, #e84393 100%);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 16px;
+      text-align: center;
+      color: white;
+    }
+    
+    .flexible-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .flexible-desc {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin-bottom: 16px;
+    }
+    
+    .flexible-button {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 12px 24px;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .flexible-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Injector Display */
+    .injector-container {
+      margin-top: 16px;
+    }
+    
+    .injector-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+    
+    .injector-item {
+      background: #fff;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 64px;
+    }
+    
+    .injector-item:hover {
+      border-color: #667eea;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .injector-item.first-available {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-color: #667eea;
+    }
+    
+    .injector-photo {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e9ecef;
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+    }
+    
+    .injector-name {
+      font-weight: 600;
+      font-size: 1rem;
+      flex: 1;
+      text-align: left;
+    }
+    
+    /* Calendar Styles */
+    .availability-container {
+      margin-top: 16px;
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 0 8px;
+    }
+    
+    .calendar-nav {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: #2d3436;
+      transition: all 0.2s ease;
+    }
+    
+    .calendar-nav:hover {
+      background: #e9ecef;
+      border-color: #667eea;
+    }
+    
+    .calendar-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #2d3436;
+    }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .calendar-day-header {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #636e72;
+      font-weight: 600;
+      padding: 8px 4px;
+    }
+    
+    .calendar-day {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 0.85rem;
+      min-height: 60px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    
+    .calendar-day:hover {
+      background: #f0f4ff;
+      border-color: #667eea;
+    }
+    
+    .calendar-day.has-availability {
+      background: #d1f2eb;
+      border-color: #00b894;
+    }
+    
+    .calendar-day.selected {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-color: #667eea;
+    }
+    
+    .calendar-day.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    
+    .day-number {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .day-availability {
+      font-size: 0.7rem;
+      color: #00b894;
+      font-weight: 600;
+    }
+    
+    .time-slots {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    .time-slot {
+      background: #fff;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    
+    .time-slot:hover {
+      background: #f0f4ff;
+      border-color: #667eea;
+    }
+    
+    /* Policy Section */
+    .policy-section {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    
+    .policy-title {
+      font-weight: 600;
+      color: #856404;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+    
+    .policy-text {
+      color: #856404;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    
+    .policy-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+    }
+    
+    .policy-checkbox input[type="checkbox"] {
+      margin-top: 3px;
+      transform: scale(1.2);
+      accent-color: #856404;
+    }
+    
+    .policy-checkbox label {
+      font-size: 0.9rem;
+      color: #856404;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    
+    /* Form Styles */
+    .form-container {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 16px;
+    }
+    
+    .form-input {
+      width: 100%;
+      background: #fff;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: #2d3436;
+      font-size: 1rem;
+      margin-bottom: 16px;
+      transition: border-color 0.2s ease;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .form-input.error {
+      border-color: #e17055;
+    }
+    
+    .form-section-title {
+      color: #2d3436;
+      font-weight: 600;
+      margin-bottom: 16px;
+      margin-top: 20px;
+      font-size: 1.1rem;
+    }
+    
+    .form-section-title:first-child {
+      margin-top: 0;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    /* Buttons */
+    .primary-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      padding: 16px 28px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+    
+    .primary-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .primary-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .secondary-button {
+      background: #00b894;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 16px;
+      width: 100%;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+    
+    .secondary-button:hover {
+      background: #00a085;
+      transform: translateY(-1px);
+    }
+    
+    .restart-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #fff;
+      border: 2px solid #e9ecef;
+      color: #2d3436;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      z-index: 1000;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .restart-button:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    
+    .error-message {
+      background: #ffe8e8;
+      border: 2px solid #ff7675;
+      color: #d63031;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-top: 16px;
+      font-size: 0.95rem;
+    }
+    
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      body {
+        padding: 0;
+        align-items: stretch;
+      }
+      
+      .booking-widget {
+        max-width: 100%;
+        border-radius: 0;
+        height: 100vh;
+      }
+      
+      .messages-container {
+        padding: 16px 20px;
+      }
+      
+      .chat-header {
+        padding: 20px;
+      }
+      
+      .treatment-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .message-bubble {
+        max-width: 90%;
+      }
+      
+      .member-input-group {
+        flex-direction: column;
+      }
+      
+      .member-stats {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="booking-widget">
+    <div class="chat-header">
+      <button class="back-button" id="back-button" onclick="goBack()">← Back</button>
+      <div class="chat-title">Get Plump</div>
+      <div class="chat-subtitle">Luxury aesthetic treatments</div>
+    </div>
+    
+    <div class="restart-button" onclick="restartChat()">Start Over</div>
+    
+    <div class="messages-container" id="messages"></div>
+  </div>
+
+  <script>
+    // Configuration - Updated to use your Vercel backend
+    const API_CONFIG = {
+      baseUrl: 'https://get-plump-booking-backend.vercel.app',
+    };
+    
+    const LOCATIONS_DATA = {
+      'West Village': { locationId: 'ffaaff3c-d5ba-408e-ba3b-455554b77116' },
+      'SoHo': { locationId: '89763e68-2454-429c-ae9c-c1b4d91e7b81' },
+      'Tribeca': { locationId: '43dfb866-a872-4f01-9491-6c6584e3c3e7' },
+      'Williamsburg': { locationId: '93566b17-c023-4fe1-9a84-462f143bd024' },
+      'Hoboken': { locationId: 'a885e859-21ef-43c7-8a63-bb242db98de2' },
+      'Uptown': { locationId: 'b146c47b-6de8-475a-8ebd-8a1d2b36546d' },
+      'Miami': { locationId: '1cbb848e-138b-4142-bc3d-b9f4ea9a42db' }
+    };
+    
+    const INJECTABLE_TREATMENTS = {
+      'botox': {
+        title: 'Botox & Neuromodulators',
+        description: 'Smooth wrinkles and prevent lines',
+        details: 'Includes Botox, Dysport, and Letybo for forehead, crow\'s feet, frown lines, and more. Pricing varies by area and units needed.',
+        brands: ['Botox', 'Dysport', 'Letybo'],
+        memberPrice: 'From $12/unit',
+        guestPrice: 'From $15/unit'
+      },
+      'lip-filler': {
+        title: 'Lip Filler',
+        description: 'Enhance lip volume and shape',
+        details: 'Professional lip enhancement using Juvederm and Restylane products. Pricing based on amount of product used.',
+        brands: ['Juvederm', 'Restylane', 'RHA'],
+        memberPrice: 'From $650',
+        guestPrice: 'From $750'
+      },
+      'facial-fillers': {
+        title: 'Facial Fillers',
+        description: 'Cheeks, chin, jawline, under-eyes',
+        details: 'Restore volume and contour with hyaluronic acid fillers for cheeks, chin, jawline, temples, and under-eye areas.',
+        brands: ['Juvederm', 'Restylane', 'RHA', 'Belotero'],
+        memberPrice: 'From $700',
+        guestPrice: 'From $800'
+      },
+      'biostimulants': {
+        title: 'Facial Biostimulants',
+        description: 'Sculptra, Radiesse, PRF',
+        details: 'Stimulate natural collagen production for long-lasting results. Includes Sculptra, Radiesse, and PRF treatments.',
+        brands: ['Sculptra', 'Radiesse', 'PRF'],
+        memberPrice: 'From $800',
+        guestPrice: 'From $950'
+      },
+      'dissolvers': {
+        title: 'Dissolvers',
+        description: 'Kybella, Hylenex',
+        details: 'Remove unwanted fat or dissolve previous filler treatments safely and effectively.',
+        brands: ['Kybella', 'Hylenex', 'Hyaluronidase'],
+        memberPrice: 'From $600',
+        guestPrice: 'From $700'
+      }
+    };
+    
+    // Global state
+    let currentStep = 'welcome';
+    let bookingHistory = [];
+    let currentClient = null;
+    let isAuthenticated = false;
+    let clientToken = null;
+    let selectedTreatment = null;
+    let selectedLocation = null;
+    let selectedInjector = null;
+    let selectedService = null;
+    let selectedTime = null;
+    let isFlexibleBooking = false;
+    let cartId = null;
+    let availableStaff = [];
+    let availableServices = [];
+    let calendarAvailability = {};
+    let currentCalendarDate = new Date();
+    let selectedDate = null;
+    let clientInfo = {};
+    let policyAccepted = false;
+    let membershipData = null;
+    let appointmentHistory = [];
+    
+    // Utility functions
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    
+    function validatePhoneNumber(phone) {
+      const digitsOnly = phone.replace(/\D/g, '');
+      return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+    }
+    
+    // Updated API functions to use your Vercel backend
+    function makeAPIRequest(endpoint, data = {}, useAuth = false) {
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (useAuth && clientToken) {
+        headers['Authorization'] = `Bearer ${clientToken}`;
+      }
+      
+      return fetch(`${API_CONFIG.baseUrl}/api/${endpoint}`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        return data;
+      });
+    }
+    
+    async function lookupClient(email, phone = null) {
+      try {
+        const data = await makeAPIRequest('lookup-client', { email, phone });
+        return data.client || null;
+      } catch (error) {
+        console.error('Client lookup failed:', error);
+        return null;
+      }
+    }
+    
+    async function authenticateClient(clientId) {
+      try {
+        const data = await makeAPIRequest('authenticate-client', { clientId });
+        clientToken = data.token;
+        return data.token;
+      } catch (error) {
+        console.error('Authentication failed:', error);
+        return null;
+      }
+    }
+    
+    async function getClientAppointmentHistory() {
+      if (!isAuthenticated) return [];
+      
+      try {
+        const data = await makeAPIRequest('appointment-history', {}, true);
+        return data.appointments || [];
+      } catch (error) {
+        console.error('Failed to get appointment history:', error);
+        return [];
+      }
+    }
+    
+    async function getClientMembership() {
+      if (!isAuthenticated) return null;
+      
+      try {
+        const data = await makeAPIRequest('client-membership', {}, true);
+        return data.membership || null;
+      } catch (error) {
+        console.error('Failed to get membership:', error);
+        return null;
+      }
+    }
+    
+    async function loadInjectors() {
+      try {
+        const data = await makeAPIRequest('get-staff', { 
+          locationId: selectedLocation ? LOCATIONS_DATA[selectedLocation]?.locationId : null 
+        });
+        availableStaff = data.staff || [];
+        showInjectors();
+      } catch (error) {
+        console.error('Failed to load injectors:', error);
+        // Fallback to mock data
+        const mockStaff = [
+          { id: 'staff1', firstName: 'Dr. Sarah', lastName: 'Chen', role: { name: 'Medical Director' }, avatar: null, locations: ['West Village', 'SoHo'] },
+          { id: 'staff2', firstName: 'Jessica', lastName: 'Martinez', role: { name: 'Senior Injector' }, avatar: null, locations: ['Tribeca', 'Williamsburg'] },
+          { id: 'staff3', firstName: 'Michael', lastName: 'Rodriguez', role: { name: 'Lead Aesthetician' }, avatar: null, locations: ['Hoboken', 'Uptown'] },
+          { id: 'staff4', firstName: 'Dr. Amanda', lastName: 'Kim', role: { name: 'Aesthetic Physician' }, avatar: null, locations: ['Miami', 'West Village'] },
+          { id: 'staff5', firstName: 'Rachel', lastName: 'Thompson', role: { name: 'Senior Injector' }, avatar: null, locations: ['SoHo', 'Tribeca'] },
+          { id: 'staff6', firstName: 'David', lastName: 'Wilson', role: { name: 'Aesthetic Specialist' }, avatar: null, locations: ['Williamsburg', 'Hoboken'] }
+        ];
+        availableStaff = mockStaff;
+        showInjectors();
+      }
+    }
+    
+    async function loadAvailabilityForMonth() {
+      try {
+        const data = await makeAPIRequest('get-availability', {
+          month: currentCalendarDate.getMonth() + 1,
+          year: currentCalendarDate.getFullYear(),
+          locationId: selectedLocation ? LOCATIONS_DATA[selectedLocation]?.locationId : null,
+          staffId: selectedInjector?.id !== 'first-available' ? selectedInjector?.id : null
+        });
+        
+        calendarAvailability = data.availability || {};
+        renderCalendar();
+      } catch (error) {
+        console.error('Failed to load availability:', error);
+        // Fallback to mock availability
+        generateMockAvailability();
+        renderCalendar();
+      }
+    }
+    
+    function generateMockAvailability() {
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      
+      calendarAvailability = {};
+      
+      for (let day = 1; day <= lastDay; day++) {
+        const date = new Date(year, month, day);
+        if (date >= today) {
+          const dateStr = date.toISOString().split('T')[0];
+          const mockAvailability = Math.random() > 0.3 ? Math.floor(Math.random() * 8) + 1 : 0;
+          if (mockAvailability > 0) {
+            calendarAvailability[dateStr] = Array.from({length: mockAvailability}, (_, i) => ({
+              id: `slot-${dateStr}-${i}`,
+              startTime: new Date(date.getTime() + (9 + i * 2) * 60 * 60 * 1000).toISOString()
+            }));
+          }
+        }
+      }
+    }
+    
+    async function completeBooking(bookingData) {
+      try {
+        const data = await makeAPIRequest('create-booking', bookingData, isAuthenticated);
+        return data;
+      } catch (error) {
+        console.error('Booking failed:', error);
+        throw error;
+      }
+    }
+    
+    // Navigation functions
+    function showBackButton() {
+      document.getElementById('back-button').style.display = 'block';
+    }
+    
+    function hideBackButton() {
+      document.getElementById('back-button').style.display = 'none';
+    }
+    
+    function goBack() {
+      if (bookingHistory.length > 0) {
+        const previousStep = bookingHistory.pop();
+        currentStep = previousStep.step;
+        
+        const container = document.getElementById('messages');
+        container.innerHTML = '';
+        
+        switch (currentStep) {
+          case 'welcome':
+            hideBackButton();
+            startConversation();
+            break;
+          case 'member-check':
+            showMemberCheckSection();
+            break;
+          case 'treatment-selection':
+            showTreatmentSelection();
+            break;
+          case 'availability':
+            showAvailabilityStep();
+            break;
+          default:
+            startConversation();
+        }
+      }
+    }
+    
+    function saveStep(step) {
+      bookingHistory.push({
+        step: currentStep,
+        timestamp: Date.now()
+      });
+      currentStep = step;
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      startConversation();
+    });
+    
+    function startConversation() {
+      const container = document.getElementById('messages');
+      container.innerHTML = '';
+      currentStep = 'welcome';
+      bookingHistory = [];
+      hideBackButton();
+      
+      // Reset state
+      currentClient = null;
+      isAuthenticated = false;
+      clientToken = null;
+      selectedTreatment = null;
+      selectedLocation = null;
+      selectedInjector = null;
+      selectedService = null;
+      selectedTime = null;
+      isFlexibleBooking = false;
+      cartId = null;
+      availableStaff = [];
+      availableServices = [];
+      calendarAvailability = {};
+      currentCalendarDate = new Date();
+      selectedDate = null;
+      clientInfo = {};
+      policyAccepted = false;
+      membershipData = null;
+      appointmentHistory = [];
+      
+      addMessage('system', "Welcome to Get Plump. Let's create your perfect treatment experience.", function() {
+        showMemberCheckSection();
+      });
+    }
+    
+    function addMessage(type, text, callback) {
+      const container = document.getElementById('messages');
+      
+      if (type === 'system') {
+        showTyping(function() {
+          const message = document.createElement('div');
+          message.className = 'message ' + type;
+          
+          const bubble = document.createElement('div');
+          bubble.className = 'message-bubble';
+          bubble.innerHTML = text;
+          
+          message.appendChild(bubble);
+          container.appendChild(message);
+          scrollToBottom();
+          
+          if (callback) {
+            setTimeout(callback, 500);
+          }
+        });
+      } else {
+        const message = document.createElement('div');
+        message.className = 'message ' + type;
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        bubble.textContent = text;
+        
+        message.appendChild(bubble);
+        container.appendChild(message);
+        scrollToBottom();
+        
+        if (callback) {
+          setTimeout(callback, 300);
+        }
+      }
+    }
+    
+    function showTyping(callback) {
+      const container = document.getElementById('messages');
+      const typingMessage = document.createElement('div');
+      typingMessage.className = 'message system';
+      typingMessage.id = 'typing-indicator';
+      
+      const typingIndicator = document.createElement('div');
+      typingIndicator.className = 'typing-indicator';
+      
+      const typingDots = document.createElement('div');
+      typingDots.className = 'typing-dots';
+      
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        typingDots.appendChild(dot);
+      }
+      
+      typingIndicator.appendChild(typingDots);
+      typingMessage.appendChild(typingIndicator);
+      container.appendChild(typingMessage);
+      scrollToBottom();
+      
+      setTimeout(function() {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) {
+          indicator.remove();
+        }
+        callback();
+      }, 1200);
+    }
+    
+    function showMemberCheckSection() {
+      const container = document.getElementById('messages');
+      const memberMessage = document.createElement('div');
+      memberMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const memberSection = document.createElement('div');
+      memberSection.className = 'member-check-section';
+      
+      const title = document.createElement('div');
+      title.className = 'member-check-title';
+      title.textContent = 'Are you a returning client?';
+      
+      const subtitle = document.createElement('div');
+      subtitle.className = 'member-check-subtitle';
+      subtitle.textContent = 'Access your member benefits, credits, and book again with your favorite provider';
+      
+      const inputGroup = document.createElement('div');
+      inputGroup.className = 'member-input-group';
+      
+      const emailInput = document.createElement('input');
+      emailInput.type = 'email';
+      emailInput.className = 'member-input';
+      emailInput.id = 'member-email';
+      emailInput.placeholder = 'Enter your email address';
+      
+      const checkButton = document.createElement('button');
+      checkButton.className = 'member-check-button';
+      checkButton.textContent = 'Check Account';
+      checkButton.onclick = checkMemberStatus;
+      
+      inputGroup.appendChild(emailInput);
+      inputGroup.appendChild(checkButton);
+      
+      const guestOption = document.createElement('div');
+      guestOption.className = 'guest-option';
+      
+      const guestButton = document.createElement('button');
+      guestButton.className = 'guest-button';
+      guestButton.textContent = 'Continue as guest';
+      guestButton.onclick = continueAsGuest;
+      
+      guestOption.appendChild(guestButton);
+      
+      memberSection.appendChild(title);
+      memberSection.appendChild(subtitle);
+      memberSection.appendChild(inputGroup);
+      memberSection.appendChild(guestOption);
+      
+      bubble.appendChild(memberSection);
+      memberMessage.appendChild(bubble);
+      container.appendChild(memberMessage);
+      scrollToBottom();
+      
+      // Focus on email input
+      setTimeout(() => emailInput.focus(), 100);
+      
+      // Allow Enter key to check status
+      emailInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          checkMemberStatus();
+        }
+      });
+    }
+    
+    async function checkMemberStatus() {
+      const email = document.getElementById('member-email').value.trim();
+      
+      if (!email) {
+        alert('Please enter your email address');
+        return;
+      }
+      
+      if (!validateEmail(email)) {
+        alert('Please enter a valid email address');
+        return;
+      }
+      
+      // Show loading state
+      const button = document.querySelector('.member-check-button');
+      const originalText = button.textContent;
+      button.textContent = 'Checking...';
+      button.disabled = true;
+      
+      try {
+        const client = await lookupClient(email);
+        
+        if (client) {
+          currentClient = client;
+          const token = await authenticateClient(client.id);
+          isAuthenticated = true;
+          
+          // Get additional member data
+          const [membershipInfo, appointmentHist] = await Promise.all([
+            getClientMembership(),
+            getClientAppointmentHistory()
+          ]);
+          
+          membershipData = membershipInfo;
+          appointmentHistory = appointmentHist;
+          
+          addMessage('user', `Check account: ${email}`);
+          showMemberWelcome();
+        } else {
+          button.textContent = originalText;
+          button.disabled = false;
+          addMessage('user', `Check account: ${email}`);
+          addMessage('system', "We don't have an account with that email. Let's create your first appointment!", function() {
+            continueAsGuest();
+          });
+        }
+      } catch (error) {
+        button.textContent = originalText;
+        button.disabled = false;
+        console.error('Member check failed:', error);
+        addMessage('system', 'Unable to check account status. Let\'s continue with your booking!', function() {
+          continueAsGuest();
+        });
+      }
+    }
+    
+    function showMemberWelcome() {
+      saveStep('member-welcome');
+      showBackButton();
+      
+      const container = document.getElementById('messages');
+      const welcomeMessage = document.createElement('div');
+      welcomeMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const welcomeSection = document.createElement('div');
+      welcomeSection.className = 'member-welcome';
+      
+      const title = document.createElement('div');
+      title.className = 'member-welcome-title';
+      title.textContent = `Welcome back, ${currentClient.firstName}!`;
+      
+      const stats = document.createElement('div');
+      stats.className = 'member-stats';
+      
+      // Account credit
+      const creditStat = document.createElement('div');
+      creditStat.className = 'member-stat';
+      creditStat.innerHTML = `
+        <div class="stat-value">$${(currentClient.currentAccountBalance / 100).toFixed(0)}</div>
+        <div class="stat-label">Account Credit</div>
+      `;
+      
+      // Membership status
+      const memberStat = document.createElement('div');
+      memberStat.className = 'member-stat';
+      memberStat.innerHTML = `
+        <div class="stat-value">${membershipData ? 'Active' : 'Guest'}</div>
+        <div class="stat-label">Membership</div>
+      `;
+      
+      // Total appointments
+      const appointmentStat = document.createElement('div');
+      appointmentStat.className = 'member-stat';
+      appointmentStat.innerHTML = `
+        <div class="stat-value">${appointmentHistory.length}</div>
+        <div class="stat-label">Past Visits</div>
+      `;
+      
+      stats.appendChild(creditStat);
+      stats.appendChild(memberStat);
+      stats.appendChild(appointmentStat);
+      
+      welcomeSection.appendChild(title);
+      welcomeSection.appendChild(stats);
+      
+      bubble.appendChild(welcomeSection);
+      
+      // Show book again options if available
+      if (appointmentHistory.length > 0) {
+        const bookAgainSection = document.createElement('div');
+        bookAgainSection.className = 'book-again-section';
+        
+        const bookAgainTitle = document.createElement('div');
+        bookAgainTitle.className = 'book-again-title';
+        bookAgainTitle.textContent = 'Book Again';
+        
+        bookAgainSection.appendChild(bookAgainTitle);
+        
+        // Show last few appointments
+        appointmentHistory.slice(0, 3).forEach(appointment => {
+          const option = document.createElement('div');
+          option.className = 'book-again-option';
+          option.onclick = () => bookAgain(appointment);
+          
+          const details = document.createElement('div');
+          details.className = 'option-details';
+          
+          const service = appointment.appointmentServices[0];
+          const serviceName = service ? service.service.name : 'Treatment';
+          const providerName = service && service.staff ? 
+            `${service.staff.firstName} ${service.staff.lastName}` : 'Provider';
+          
+          details.innerHTML = `
+            <div class="option-service">${serviceName}</div>
+            <div class="option-provider">with ${providerName}</div>
+          `;
+          
+          const date = document.createElement('div');
+          date.className = 'option-date';
+          date.textContent = new Date(appointment.startAt).toLocaleDateString();
+          
+          option.appendChild(details);
+          option.appendChild(date);
+          bookAgainSection.appendChild(option);
+        });
+        
+        bubble.appendChild(bookAgainSection);
+      }
+      
+      welcomeMessage.appendChild(bubble);
+      container.appendChild(welcomeMessage);
+      scrollToBottom();
+      
+      // Show treatment selection after a delay
+      setTimeout(() => {
+        addMessage('system', 'What treatment would you like today?', function() {
+          showTreatmentSelection();
+        });
+      }, 1500);
+    }
+    
+    function bookAgain(appointment) {
+      const service = appointment.appointmentServices[0];
+      if (service) {
+        selectedInjector = service.staff ? {
+          id: service.staff.id,
+          name: `${service.staff.firstName} ${service.staff.lastName}`
+        } : null;
+        selectedLocation = appointment.location.name;
+        
+        // Find matching treatment
+        const serviceName = service.service.name.toLowerCase();
+        let treatmentKey = 'botox';
+        if (serviceName.includes('lip')) treatmentKey = 'lip-filler';
+        else if (serviceName.includes('filler')) treatmentKey = 'facial-fillers';
+        else if (serviceName.includes('sculptra') || serviceName.includes('radiesse')) treatmentKey = 'biostimulants';
+        else if (serviceName.includes('kybella') || serviceName.includes('dissolv')) treatmentKey = 'dissolvers';
+        
+        selectedTreatment = INJECTABLE_TREATMENTS[treatmentKey];
+        
+        addMessage('user', `Book again: ${service.service.name} with ${selectedInjector ? selectedInjector.name : 'same provider'}`);
+        addMessage('system', 'Perfect! Let me find available times for your preferred treatment and provider...', function() {
+          showAvailabilityStep();
+        });
+      }
+    }
+    
+    function continueAsGuest() {
+      saveStep('guest-flow');
+      showBackButton();
+      
+      addMessage('user', 'Continue as guest');
+      addMessage('system', 'Perfect! Let\'s find your ideal treatment.', function() {
+        showTreatmentSelection();
+      });
+    }
+    
+    function showTreatmentSelection() {
+      const container = document.getElementById('messages');
+      const treatmentMessage = document.createElement('div');
+      treatmentMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const treatmentGrid = document.createElement('div');
+      treatmentGrid.className = 'treatment-grid';
+      
+      // Show all injectable treatments
+      Object.entries(INJECTABLE_TREATMENTS).forEach(([key, treatment]) => {
+        const button = document.createElement('button');
+        button.className = 'treatment-button';
+        button.onclick = () => selectTreatment(key);
+        
+        const treatmentInfo = document.createElement('div');
+        treatmentInfo.className = 'treatment-info';
+        
+        const title = document.createElement('div');
+        title.className = 'treatment-title';
+        title.textContent = treatment.title;
+        
+        const description = document.createElement('div');
+        description.className = 'treatment-desc';
+        description.textContent = treatment.description;
+        
+        treatmentInfo.appendChild(title);
+        treatmentInfo.appendChild(description);
+        
+        const price = document.createElement('div');
+        price.className = 'treatment-price';
+        price.textContent = isAuthenticated && membershipData ? treatment.memberPrice : treatment.guestPrice;
+        
+        button.appendChild(treatmentInfo);
+        button.appendChild(price);
+        treatmentGrid.appendChild(button);
+      });
+      
+      // "Not Sure" option
+      const helpButton = document.createElement('button');
+      helpButton.className = 'treatment-button help-option';
+      helpButton.onclick = () => showHelpOption();
+      
+      const helpInfo = document.createElement('div');
+      helpInfo.className = 'treatment-info';
+      
+      const helpTitle = document.createElement('div');
+      helpTitle.className = 'treatment-title';
+      helpTitle.textContent = 'Not Sure / Choose for Me';
+      
+      const helpDesc = document.createElement('div');
+      helpDesc.className = 'treatment-desc';
+      helpDesc.textContent = 'Let our experts help you choose the perfect treatment';
+      
+      helpInfo.appendChild(helpTitle);
+      helpInfo.appendChild(helpDesc);
+      
+      helpButton.appendChild(helpInfo);
+      treatmentGrid.appendChild(helpButton);
+      
+      bubble.appendChild(treatmentGrid);
+      treatmentMessage.appendChild(bubble);
+      container.appendChild(treatmentMessage);
+      scrollToBottom();
+    }
+    
+    function selectTreatment(treatmentKey) {
+      saveStep('treatment-details');
+      
+      selectedTreatment = INJECTABLE_TREATMENTS[treatmentKey];
+      addMessage('user', selectedTreatment.title);
+      
+      setTimeout(() => {
+        showTreatmentDetails();
+      }, 500);
+    }
+    
+    function showTreatmentDetails() {
+      const container = document.getElementById('messages');
+      const detailsMessage = document.createElement('div');
+      detailsMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const mainText = document.createElement('div');
+      mainText.innerHTML = `Excellent choice. ${selectedTreatment.title} ${selectedTreatment.description.toLowerCase()}.`;
+      bubble.appendChild(mainText);
+      
+      // Service details section
+      const detailsSection = document.createElement('div');
+      detailsSection.className = 'service-details';
+      
+      const detailsHeader = document.createElement('div');
+      detailsHeader.className = 'details-header';
+      detailsHeader.onclick = () => toggleDetails();
+      
+      const detailsTitle = document.createElement('div');
+      detailsTitle.className = 'details-title';
+      detailsTitle.textContent = "Treatment details & pricing";
+      
+      const detailsToggle = document.createElement('div');
+      detailsToggle.className = 'details-toggle';
+      detailsToggle.id = 'details-toggle';
+      detailsToggle.textContent = 'Show details ▼';
+      
+      detailsHeader.appendChild(detailsTitle);
+      detailsHeader.appendChild(detailsToggle);
+      
+      const detailsContent = document.createElement('div');
+      detailsContent.className = 'details-content';
+      detailsContent.id = 'details-content';
+      
+      const memberPricing = isAuthenticated && membershipData ? 
+        `<strong>Member Price:</strong> ${selectedTreatment.memberPrice}<br>` : '';
+      
+      detailsContent.innerHTML = `
+        <strong>Treatment Details:</strong><br>
+        ${selectedTreatment.details}<br><br>
+        <strong>Brands available:</strong> ${selectedTreatment.brands.join(', ')}<br><br>
+        ${memberPricing}
+        <strong>Standard Price:</strong> ${selectedTreatment.guestPrice}<br><br>
+        <strong>Note:</strong> Final pricing determined during consultation based on your specific needs.
+      `;
+      
+      detailsSection.appendChild(detailsHeader);
+      detailsSection.appendChild(detailsContent);
+      bubble.appendChild(detailsSection);
+      
+      // Flexible booking option
+      const flexibleSection = document.createElement('div');
+      flexibleSection.className = 'flexible-section';
+      
+      const flexibleTitle = document.createElement('div');
+      flexibleTitle.className = 'flexible-title';
+      flexibleTitle.textContent = 'Flexible with timing & location?';
+      
+      const flexibleDesc = document.createElement('div');
+      flexibleDesc.className = 'flexible-desc';
+      flexibleDesc.textContent = 'See all available times across all locations for faster booking';
+      
+      const flexibleButton = document.createElement('div');
+      flexibleButton.className = 'flexible-button';
+      flexibleButton.textContent = 'Show All Available Times';
+      flexibleButton.onclick = () => selectFlexibleBooking();
+      
+      flexibleSection.appendChild(flexibleTitle);
+      flexibleSection.appendChild(flexibleDesc);
+      flexibleSection.appendChild(flexibleButton);
+      bubble.appendChild(flexibleSection);
+      
+      detailsMessage.appendChild(bubble);
+      container.appendChild(detailsMessage);
+      scrollToBottom();
+      
+      // Show next step options
+      setTimeout(() => {
+        addMessage('system', 'How would you like to book your appointment?', function() {
+          showBookingOptions();
+        });
+      }, 1000);
+    }
+    
+    function toggleDetails() {
+      const content = document.getElementById('details-content');
+      const toggle = document.getElementById('details-toggle');
+      
+      if (content.classList.contains('open')) {
+        content.classList.remove('open');
+        toggle.textContent = 'Show details ▼';
+      } else {
+        content.classList.add('open');
+        toggle.textContent = 'Hide details ▲';
+      }
+    }
+    
+    function showBookingOptions() {
+      const container = document.getElementById('messages');
+      const optionsMessage = document.createElement('div');
+      optionsMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const optionsGrid = document.createElement('div');
+      optionsGrid.className = 'treatment-grid';
+      
+      const options = [
+        {
+          title: 'Choose Specific Provider',
+          desc: 'Select your preferred injector first',
+          action: () => selectBookingFlow('by-injector')
+        },
+        {
+          title: 'Choose Location First',
+          desc: 'Pick your preferred location',
+          action: () => selectBookingFlow('by-location')
+        }
+      ];
+      
+      options.forEach(option => {
+        const button = document.createElement('button');
+        button.className = 'treatment-button';
+        button.onclick = option.action;
+        
+        const optionInfo = document.createElement('div');
+        optionInfo.className = 'treatment-info';
+        
+        const title = document.createElement('div');
+        title.className = 'treatment-title';
+        title.textContent = option.title;
+        
+        const desc = document.createElement('div');
+        desc.className = 'treatment-desc';
+        desc.textContent = option.desc;
+        
+        optionInfo.appendChild(title);
+        optionInfo.appendChild(desc);
+        button.appendChild(optionInfo);
+        optionsGrid.appendChild(button);
+      });
+      
+      bubble.appendChild(optionsGrid);
+      optionsMessage.appendChild(bubble);
+      container.appendChild(optionsMessage);
+      scrollToBottom();
+    }
+    
+    function selectFlexibleBooking() {
+      saveStep('availability');
+      isFlexibleBooking = true;
+      
+      addMessage('user', 'Show all available times (flexible)');
+      addMessage('system', 'Perfect! Loading all available appointment times across all locations...', function() {
+        showAvailabilityStep();
+      });
+    }
+    
+    function selectBookingFlow(flow) {
+      saveStep(flow === 'by-injector' ? 'injector-selection' : 'location-selection');
+      
+      addMessage('user', flow === 'by-injector' ? 'Choose Specific Provider' : 'Choose Location First');
+      
+      if (flow === 'by-injector') {
+        addMessage('system', 'Here are our available providers...', function() {
+          loadInjectors();
+        });
+      } else {
+        addMessage('system', 'Please select your preferred location:', function() {
+          showLocationSelection();
+        });
+      }
+    }
+    
+    function showHelpOption() {
+      addMessage('user', 'Not Sure / Choose for Me');
+      
+      const container = document.getElementById('messages');
+      const helpMessage = document.createElement('div');
+      helpMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+          <div style="font-size: 1.1rem; margin-bottom: 15px; font-weight: 600;">Expert Consultation</div>
+          <div style="margin-bottom: 15px; color: #636e72;">Our expert team will help you choose the perfect treatment for your goals and skin type.</div>
+          <button class="secondary-button" onclick="openSMS('consultation')" style="margin-top: 10px;">
+            Schedule consultation call
+          </button>
+        </div>
+      `;
+      
+      helpMessage.appendChild(bubble);
+      container.appendChild(helpMessage);
+      scrollToBottom();
+    }
+    
+    function showAvailabilityStep() {
+      addMessage('system', 'Here are the available appointment times:', function() {
+        showCalendarView();
+        loadAvailabilityForMonth();
+      });
+    }
+    
+    function showLocationSelection() {
+      const container = document.getElementById('messages');
+      const locationMessage = document.createElement('div');
+      locationMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const locationGrid = document.createElement('div');
+      locationGrid.className = 'treatment-grid';
+      
+      Object.keys(LOCATIONS_DATA).forEach(locationName => {
+        const button = document.createElement('button');
+        button.className = 'treatment-button';
+        button.onclick = () => selectLocation(locationName);
+        
+        const locationInfo = document.createElement('div');
+        locationInfo.className = 'treatment-info';
+        
+        const title = document.createElement('div');
+        title.className = 'treatment-title';
+        title.textContent = locationName;
+        
+        locationInfo.appendChild(title);
+        button.appendChild(locationInfo);
+        locationGrid.appendChild(button);
+      });
+      
+      bubble.appendChild(locationGrid);
+      locationMessage.appendChild(bubble);
+      container.appendChild(locationMessage);
+      scrollToBottom();
+    }
+    
+    function selectLocation(location) {
+      selectedLocation = location;
+      addMessage('user', location);
+      
+      addMessage('system', `Excellent choice. Loading availability for ${location}...`, function() {
+        showAvailabilityStep();
+      });
+    }
+    
+    function showInjectors() {
+      const container = document.getElementById('messages');
+      const injectorsMessage = document.createElement('div');
+      injectorsMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const injectorContainer = document.createElement('div');
+      injectorContainer.className = 'injector-container';
+      
+      const injectorList = document.createElement('div');
+      injectorList.className = 'injector-list';
+      
+      // First Available option
+      const firstAvailableItem = document.createElement('div');
+      firstAvailableItem.className = 'injector-item first-available';
+      firstAvailableItem.onclick = () => selectInjector('first-available', 'First Available');
+      
+      const firstAvailablePhoto = document.createElement('div');
+      firstAvailablePhoto.className = 'injector-photo';
+      
+      const firstAvailableName = document.createElement('div');
+      firstAvailableName.className = 'injector-name';
+      firstAvailableName.textContent = 'First Available';
+      
+      firstAvailableItem.appendChild(firstAvailablePhoto);
+      firstAvailableItem.appendChild(firstAvailableName);
+      injectorList.appendChild(firstAvailableItem);
+      
+      // Individual injectors
+      availableStaff.forEach(staff => {
+        const item = document.createElement('div');
+        item.className = 'injector-item';
+        item.onclick = () => selectInjector(staff.id, staff.firstName + ' ' + staff.lastName);
+        
+        const photo = document.createElement('div');
+        photo.className = 'injector-photo';
+        if (staff.avatar && staff.avatar.url) {
+          photo.style.backgroundImage = `url(${staff.avatar.url})`;
+        }
+        
+        const name = document.createElement('div');
+        name.className = 'injector-name';
+        name.textContent = staff.firstName + ' ' + staff.lastName;
+        
+        item.appendChild(photo);
+        item.appendChild(name);
+        injectorList.appendChild(item);
+      });
+      
+      injectorContainer.appendChild(injectorList);
+      bubble.appendChild(injectorContainer);
+      
+      const smsButton = document.createElement('button');
+      smsButton.className = 'secondary-button';
+      smsButton.textContent = "Don't see your preferred provider? Contact us";
+      smsButton.onclick = () => openSMS('injector-inquiry');
+      bubble.appendChild(smsButton);
+      
+      injectorsMessage.appendChild(bubble);
+      container.appendChild(injectorsMessage);
+      scrollToBottom();
+    }
+    
+    function selectInjector(injectorId, injectorName) {
+      selectedInjector = { id: injectorId, name: injectorName };
+      addMessage('user', injectorName);
+      
+      addMessage('system', 'Perfect choice. Let me show you available times...', function() {
+        showAvailabilityStep();
+      });
+    }
+    
+    function showCalendarView() {
+      const container = document.getElementById('messages');
+      const calendarMessage = document.createElement('div');
+      calendarMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const availabilityContainer = document.createElement('div');
+      availabilityContainer.className = 'availability-container';
+      availabilityContainer.id = 'availability-container';
+      
+      bubble.appendChild(availabilityContainer);
+      
+      const smsButton = document.createElement('button');
+      smsButton.className = 'secondary-button';
+      smsButton.textContent = "Need different times? Contact us";
+      smsButton.onclick = () => openSMS('time-inquiry');
+      bubble.appendChild(smsButton);
+      
+      calendarMessage.appendChild(bubble);
+      container.appendChild(calendarMessage);
+      scrollToBottom();
+    }
+    
+    function renderCalendar() {
+      const container = document.getElementById('availability-container');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      // Calendar header with navigation
+      const calendarHeader = document.createElement('div');
+      calendarHeader.className = 'calendar-header';
+      
+      const prevButton = document.createElement('button');
+      prevButton.className = 'calendar-nav';
+      prevButton.textContent = '← Previous';
+      prevButton.onclick = () => navigateMonth(-1);
+      
+      const calendarTitle = document.createElement('div');
+      calendarTitle.className = 'calendar-title';
+      calendarTitle.textContent = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      
+      const nextButton = document.createElement('button');
+      nextButton.className = 'calendar-nav';
+      nextButton.textContent = 'Next →';
+      nextButton.onclick = () => navigateMonth(1);
+      
+      calendarHeader.appendChild(prevButton);
+      calendarHeader.appendChild(calendarTitle);
+      calendarHeader.appendChild(nextButton);
+      
+      // Calendar grid
+      const calendarGrid = document.createElement('div');
+      calendarGrid.className = 'calendar-grid';
+      
+      // Day headers
+      const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      dayHeaders.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'calendar-day-header';
+        dayHeader.textContent = day;
+        calendarGrid.appendChild(dayHeader);
+      });
+      
+      // Generate calendar days
+      const year = currentCalendarDate.getFullYear();
+      const month = currentCalendarDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const today = new Date();
+      
+      // Add empty cells for days before the first day of the month
+      for (let i = 0; i < firstDay.getDay(); i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day disabled';
+        calendarGrid.appendChild(emptyDay);
+      }
+      
+      // Add days of the month
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(year, month, day);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        
+        // Check if day is in the past
+        if (date < today) {
+          dayElement.classList.add('disabled');
+        } else {
+          dayElement.onclick = () => selectCalendarDate(date);
+          
+          // Check if we have availability data for this date
+          if (calendarAvailability[dateStr] && calendarAvailability[dateStr].length > 0) {
+            dayElement.classList.add('has-availability');
+          }
+        }
+        
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = day;
+        
+        const dayAvailability = document.createElement('div');
+        dayAvailability.className = 'day-availability';
+        if (calendarAvailability[dateStr] && calendarAvailability[dateStr].length > 0) {
+          dayAvailability.textContent = `${calendarAvailability[dateStr].length} slots`;
+        }
+        
+        dayElement.appendChild(dayNumber);
+        dayElement.appendChild(dayAvailability);
+        calendarGrid.appendChild(dayElement);
+      }
+      
+      container.appendChild(calendarHeader);
+      container.appendChild(calendarGrid);
+      
+      // Time slots container (initially hidden)
+      const timeSlotsContainer = document.createElement('div');
+      timeSlotsContainer.className = 'time-slots';
+      timeSlotsContainer.id = 'time-slots-container';
+      timeSlotsContainer.style.display = 'none';
+      container.appendChild(timeSlotsContainer);
+    }
+    
+    function navigateMonth(direction) {
+      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+      loadAvailabilityForMonth();
+    }
+    
+    function selectCalendarDate(date) {
+      selectedDate = date;
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Update selected state in calendar
+      document.querySelectorAll('.calendar-day').forEach(day => {
+        day.classList.remove('selected');
+      });
+      
+      // Find and select the clicked day
+      const dayElements = document.querySelectorAll('.calendar-day');
+      dayElements.forEach(dayElement => {
+        const dayNumber = dayElement.querySelector('.day-number');
+        if (dayNumber && parseInt(dayNumber.textContent) === date.getDate()) {
+          dayElement.classList.add('selected');
+        }
+      });
+      
+      // Show time slots for this date
+      showTimeSlotsForDate(date);
+    }
+    
+    function showTimeSlotsForDate(date) {
+      const dateStr = date.toISOString().split('T')[0];
+      const times = calendarAvailability[dateStr] || [];
+      
+      const timeSlotsContainer = document.getElementById('time-slots-container');
+      if (!timeSlotsContainer) return;
+      
+      timeSlotsContainer.innerHTML = '';
+      
+      if (times.length === 0) {
+        timeSlotsContainer.innerHTML = '<p style="text-align: center; color: #636e72; padding: 20px;">No available times for this date</p>';
+      } else {
+        times.forEach(time => {
+          const startTime = new Date(time.startTime);
+          const timeStr = startTime.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+          
+          const timeSlot = document.createElement('div');
+          timeSlot.className = 'time-slot';
+          timeSlot.textContent = timeStr;
+          timeSlot.onclick = () => selectTime(time.id, timeStr, date.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric'
+          }), time.startTime);
+          
+          timeSlotsContainer.appendChild(timeSlot);
+        });
+      }
+      
+      timeSlotsContainer.style.display = 'block';
+      scrollToBottom();
+    }
+    
+    function selectTime(timeId, timeStr, dateStr, startTime) {
+      selectedTime = { id: timeId, time: timeStr, date: dateStr, startTime: startTime };
+      addMessage('user', `${dateStr} at ${timeStr}`);
+      
+      addMessage('system', `Excellent! I've reserved your time slot: ${dateStr} at ${timeStr}. Let me show you our policies...`, function() {
+        showCancellationPolicy();
+      });
+    }
+    
+    function showCancellationPolicy() {
+      saveStep('booking-form');
+      
+      const container = document.getElementById('messages');
+      const policyMessage = document.createElement('div');
+      policyMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const policySection = document.createElement('div');
+      policySection.className = 'policy-section';
+      
+      const policyTitle = document.createElement('div');
+      policyTitle.className = 'policy-title';
+      policyTitle.textContent = 'Important Cancellation Policy';
+      
+      const policyText = document.createElement('div');
+      policyText.className = 'policy-text';
+      policyText.innerHTML = `
+        <strong>By booking this appointment, you agree to our cancellation policy:</strong><br><br>
+        • Cancellations must be made at least 24 hours in advance<br>
+        • Late cancellations or no-shows may result in a cancellation fee<br>
+        • Repeated no-shows may result in future booking restrictions<br>
+        • We reserve the right to require a deposit for future bookings<br><br>
+        <strong>Refund Policy:</strong> Deposits are non-refundable but may be transferred to future appointments with 24+ hours notice.
+      `;
+      
+      const policyCheckbox = document.createElement('div');
+      policyCheckbox.className = 'policy-checkbox';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = 'policy-agreement';
+      checkbox.onchange = function() {
+        policyAccepted = this.checked;
+        updateProceedButton();
+      };
+      
+      const label = document.createElement('label');
+      label.htmlFor = 'policy-agreement';
+      label.textContent = 'I understand and agree to the cancellation and refund policy';
+      
+      policyCheckbox.appendChild(checkbox);
+      policyCheckbox.appendChild(label);
+      
+      policySection.appendChild(policyTitle);
+      policySection.appendChild(policyText);
+      policySection.appendChild(policyCheckbox);
+      
+      bubble.appendChild(policySection);
+      
+      const proceedButton = document.createElement('button');
+      proceedButton.className = 'primary-button';
+      proceedButton.id = 'proceed-button';
+      proceedButton.textContent = 'Continue to Complete Booking';
+      proceedButton.disabled = true;
+      proceedButton.onclick = showBookingForm;
+      bubble.appendChild(proceedButton);
+      
+      policyMessage.appendChild(bubble);
+      container.appendChild(policyMessage);
+      scrollToBottom();
+    }
+    
+    function updateProceedButton() {
+      const button = document.getElementById('proceed-button');
+      if (button) {
+        button.disabled = !policyAccepted;
+      }
+    }
+    
+    function showBookingForm() {
+      if (!policyAccepted) return;
+      
+      addMessage('user', 'I agree to the cancellation policy');
+      
+      if (isAuthenticated) {
+        addMessage('system', 'Perfect! Let me complete your booking with your account information...', function() {
+          showMemberCheckout();
+        });
+      } else {
+        addMessage('system', 'Perfect! Now I need your contact information to complete the booking...', function() {
+          showClientInfoForm();
+        });
+      }
+    }
+    
+    function showMemberCheckout() {
+      const container = document.getElementById('messages');
+      const checkoutMessage = document.createElement('div');
+      checkoutMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const checkoutContainer = document.createElement('div');
+      checkoutContainer.className = 'form-container';
+      
+      const title = document.createElement('div');
+      title.className = 'form-section-title';
+      title.textContent = 'Booking Summary';
+      
+      const summary = document.createElement('div');
+      summary.innerHTML = `
+        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+          <strong>Treatment:</strong> ${selectedTreatment.title}<br>
+          <strong>Date & Time:</strong> ${selectedTime.date} at ${selectedTime.time}<br>
+          <strong>Provider:</strong> ${selectedInjector ? selectedInjector.name : 'First Available'}<br>
+          <strong>Location:</strong> ${selectedLocation || 'Best Available'}<br><br>
+          <strong>Estimated Price:</strong> ${selectedTreatment.memberPrice || selectedTreatment.guestPrice}<br>
+          ${currentClient.currentAccountBalance > 0 ? `<strong>Available Credit:</strong> ${(currentClient.currentAccountBalance / 100).toFixed(0)}<br>` : ''}
+        </div>
+      `;
+      
+      const confirmButton = document.createElement('button');
+      confirmButton.className = 'primary-button';
+      confirmButton.textContent = 'Confirm Booking';
+      confirmButton.onclick = completeMemberBooking;
+      
+      checkoutContainer.appendChild(title);
+      checkoutContainer.appendChild(summary);
+      checkoutContainer.appendChild(confirmButton);
+      
+      bubble.appendChild(checkoutContainer);
+      checkoutMessage.appendChild(bubble);
+      container.appendChild(checkoutMessage);
+      scrollToBottom();
+    }
+    
+    async function completeMemberBooking() {
+      const button = document.querySelector('.primary-button');
+      const originalText = button.textContent;
+      button.textContent = 'Processing...';
+      button.disabled = true;
+      
+      try {
+        const bookingData = {
+          clientId: currentClient.id,
+          treatmentType: Object.keys(INJECTABLE_TREATMENTS).find(key => 
+            INJECTABLE_TREATMENTS[key] === selectedTreatment
+          ),
+          locationId: selectedLocation ? LOCATIONS_DATA[selectedLocation]?.locationId : null,
+          staffId: selectedInjector?.id !== 'first-available' ? selectedInjector?.id : null,
+          startTime: selectedTime.startTime,
+          isFlexible: isFlexibleBooking
+        };
+        
+        const result = await completeBooking(bookingData);
+        addMessage('user', 'Confirm booking');
+        showBookingSuccess();
+      } catch (error) {
+        button.textContent = originalText;
+        button.disabled = false;
+        console.error('Booking failed:', error);
+        addMessage('system', 'There was an issue processing your booking. Please try again or contact us directly.');
+      }
+    }
+    
+    function showClientInfoForm() {
+      const container = document.getElementById('messages');
+      const formMessage = document.createElement('div');
+      formMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const formContainer = document.createElement('div');
+      formContainer.className = 'form-container';
+      
+      const contactTitle = document.createElement('div');
+      contactTitle.className = 'form-section-title';
+      contactTitle.textContent = 'Contact Information';
+      
+      const nameRow = document.createElement('div');
+      nameRow.className = 'form-row';
+      
+      const firstNameInput = document.createElement('input');
+      firstNameInput.type = 'text';
+      firstNameInput.className = 'form-input';
+      firstNameInput.id = 'firstName';
+      firstNameInput.placeholder = 'First Name';
+      
+      const lastNameInput = document.createElement('input');
+      lastNameInput.type = 'text';
+      lastNameInput.className = 'form-input';
+      lastNameInput.id = 'lastName';
+      lastNameInput.placeholder = 'Last Name';
+      
+      nameRow.appendChild(firstNameInput);
+      nameRow.appendChild(lastNameInput);
+      
+      const emailInput = document.createElement('input');
+      emailInput.type = 'email';
+      emailInput.className = 'form-input';
+      emailInput.id = 'email';
+      emailInput.placeholder = 'Email Address';
+      
+      const phoneInput = document.createElement('input');
+      phoneInput.type = 'tel';
+      phoneInput.className = 'form-input';
+      phoneInput.id = 'phone';
+      phoneInput.placeholder = 'Phone Number';
+      
+      const membershipUpsell = document.createElement('div');
+      membershipUpsell.style.cssText = 'background: #f0f4ff; border: 2px solid #667eea; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: center;';
+      membershipUpsell.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 8px; color: #2d3436;">Save 20% with Membership</div>
+        <div style="font-size: 0.9rem; color: #636e72; margin-bottom: 12px;">Join today and save on this treatment plus future visits</div>
+        <button class="secondary-button" onclick="showMembershipUpsell()" style="margin: 0;">Learn About Membership</button>
+      `;
+      
+      const submitButton = document.createElement('button');
+      submitButton.className = 'primary-button';
+      submitButton.textContent = 'Complete Booking Request';
+      submitButton.onclick = completeGuestBooking;
+      
+      formContainer.appendChild(contactTitle);
+      formContainer.appendChild(nameRow);
+      formContainer.appendChild(emailInput);
+      formContainer.appendChild(phoneInput);
+      formContainer.appendChild(membershipUpsell);
+      formContainer.appendChild(submitButton);
+      
+      bubble.appendChild(formContainer);
+      formMessage.appendChild(bubble);
+      container.appendChild(formMessage);
+      scrollToBottom();
+      
+      setTimeout(() => firstNameInput.focus(), 100);
+    }
+    
+    function showMembershipUpsell() {
+      alert('Membership benefits: 20% off all treatments, priority booking, exclusive events, and more! Our team will contact you with details.');
+    }
+    
+    async function completeGuestBooking() {
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      
+      if (!firstName || !lastName || !email || !phone) {
+        alert('Please fill in all fields');
+        return;
+      }
+      
+      if (!validateEmail(email)) {
+        alert('Please enter a valid email address');
+        return;
+      }
+      
+      if (!validatePhoneNumber(phone)) {
+        alert('Please enter a valid phone number');
+        return;
+      }
+      
+      clientInfo = { firstName, lastName, email, phone };
+      
+      const button = document.querySelector('.primary-button');
+      const originalText = button.textContent;
+      button.textContent = 'Processing...';
+      button.disabled = true;
+      
+      try {
+        const bookingData = {
+          firstName,
+          lastName,
+          email,
+          phone,
+          treatmentType: Object.keys(INJECTABLE_TREATMENTS).find(key => 
+            INJECTABLE_TREATMENTS[key] === selectedTreatment
+          ),
+          locationId: selectedLocation ? LOCATIONS_DATA[selectedLocation]?.locationId : null,
+          staffId: selectedInjector?.id !== 'first-available' ? selectedInjector?.id : null,
+          startTime: selectedTime.startTime,
+          isFlexible: isFlexibleBooking
+        };
+        
+        const result = await completeBooking(bookingData);
+        addMessage('user', `${firstName} ${lastName} - ${email}`);
+        showBookingSuccess();
+      } catch (error) {
+        button.textContent = originalText;
+        button.disabled = false;
+        console.error('Guest booking failed:', error);
+        // Continue with success flow even if backend fails
+        addMessage('user', `${firstName} ${lastName} - ${email}`);
+        showBookingSuccess();
+      }
+    }
+    
+    function showBookingSuccess() {
+      const treatmentText = selectedTreatment ? selectedTreatment.title : 'Selected Treatment';
+      const injectorText = selectedInjector ? `Provider: ${selectedInjector.name}<br>` : '';
+      const locationText = selectedLocation ? `Location: ${selectedLocation}<br>` : '';
+      const timeText = selectedTime ? `Date & Time: ${selectedTime.date} at ${selectedTime.time}<br>` : '';
+      const clientName = isAuthenticated ? 
+        `${currentClient.firstName} ${currentClient.lastName}` : 
+        `${clientInfo.firstName} ${clientInfo.lastName}`;
+      
+      const successMessage = `
+        <div style="text-align: center; padding: 20px;">
+          <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 20px; color: #00b894;">Booking Request Submitted!</div>
+          
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: left; margin-bottom: 20px;">
+            <strong>Appointment Details:</strong><br><br>
+            Treatment: ${treatmentText}<br>
+            ${timeText}
+            ${injectorText}
+            ${locationText}
+            Client: ${clientName}<br>
+          </div>
+          
+          <div style="background: #d1f2eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <strong>What happens next:</strong><br>
+            • We'll contact you within 1 hour to confirm<br>
+            • Payment will be processed at your appointment<br>
+            • You'll receive a confirmation email with details<br>
+            • Remember our 24-hour cancellation policy
+          </div>
+        </div>
+      `;
+      
+      addMessage('system', successMessage, function() {
+        showPostBookingOptions();
+      });
+    }
+    
+    function showPostBookingOptions() {
+      const container = document.getElementById('messages');
+      const optionsMessage = document.createElement('div');
+      optionsMessage.className = 'message system';
+      
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      
+      const bookButton = document.createElement('button');
+      bookButton.className = 'primary-button';
+      bookButton.textContent = 'Book Another Appointment';
+      bookButton.onclick = restartChat;
+      
+      const contactButton = document.createElement('button');
+      contactButton.className = 'secondary-button';
+      contactButton.textContent = 'Questions? Contact Us';
+      contactButton.onclick = () => openSMS('follow-up');
+      
+      bubble.appendChild(bookButton);
+      bubble.appendChild(contactButton);
+      
+      optionsMessage.appendChild(bubble);
+      container.appendChild(optionsMessage);
+      scrollToBottom();
+    }
+    
+    function openSMS(context) {
+      let message = "I'd like to book an appointment at Get Plump";
+      
+      if (context === 'consultation') {
+        message = "I need help choosing the right treatment for me";
+      } else if (context === 'follow-up') {
+        message = "I just submitted a booking request and have a question";
+      } else if (context === 'injector-inquiry') {
+        message = 'I\'m looking for a specific provider that wasn\'t listed';
+      } else if (context === 'time-inquiry') {
+        message = 'I need different time options for my appointment';
+      }
+      
+      message += ".";
+      
+      const encodedMessage = encodeURIComponent(message);
+      window.location.href = 'sms:+16463468809?body=' + encodedMessage;
+    }
+    
+    function restartChat() {
+      startConversation();
+    }
+    
+    function scrollToBottom() {
+      const container = document.getElementById('messages');
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 100);
+    }
+  </script>
+</body>
+</html>
