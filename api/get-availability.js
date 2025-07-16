@@ -40,8 +40,7 @@ export default async function handler(req, res) {
       }
     `;
 
-    const authHeader = 'Basic ' + Buffer.from(process.env.BOULEVARD_API_KEY + ':').toString('base64');
-
+const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
     const response = await fetch(process.env.BOULEVARD_ADMIN_API_URL, {
       method: 'POST',
       headers: {
