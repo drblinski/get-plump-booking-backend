@@ -51,17 +51,16 @@ export default async function handler(req, res) {
       }
     `;
 
-const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
+    // FIXED: Use a proper header variable name
+    const basicAuthHeader = 'Basic ' + Buffer.from(process.env.BOULEVARD_API_KEY + ':').toString('base64');
     const response = await fetch(process.env.BOULEVARD_CLIENT_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': clientAuthHeader,
+        'Authorization': basicAuthHeader,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      body: JSON.stringify({
-        query: query
-      })
+      body: JSON.stringify({ query })
     });
 
     const data = await response.json();
@@ -72,7 +71,6 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
     }
 
     const appointments = data.data.myAppointments.edges.map(edge => edge.node);
-    
     return res.status(200).json({ appointments });
 
   } catch (error) {
