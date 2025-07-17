@@ -1,7 +1,6 @@
 const fetch = require('node-fetch');
 
 export default async function handler(req, res) {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -29,8 +28,7 @@ export default async function handler(req, res) {
 
   try {
     let finalClientId = clientId;
-    
-    // If no clientId provided, create a new client
+
     if (!clientId && firstName && lastName && email) {
       const createClientMutation = `
         mutation CreateClient($input: CreateClientInput!) {
@@ -45,11 +43,11 @@ export default async function handler(req, res) {
         }
       `;
 
-const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
+      const basicAuthHeader = 'Basic ' + Buffer.from(process.env.BOULEVARD_API_KEY + ':').toString('base64');
       const createClientResponse = await fetch(process.env.BOULEVARD_ADMIN_API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': authHeader,
+          'Authorization': basicAuthHeader,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
@@ -69,14 +67,12 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
       const clientData = await createClientResponse.json();
 
       if (clientData.errors && clientData.errors.length > 0) {
-        console.error('Create client error:', clientData.errors);
         return res.status(400).json({ error: clientData.errors[0].message });
       }
 
       finalClientId = clientData.data.createClient.client.id;
     }
 
-    // Create the appointment
     const createAppointmentMutation = `
       mutation CreateAppointment($input: CreateAppointmentInput!) {
         createAppointment(input: $input) {
@@ -102,8 +98,6 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
       }
     `;
 
-    // For now, we'll create a basic appointment structure
-    // In a real implementation, you'd need to map treatmentType to actual service IDs
     const appointmentInput = {
       clientId: finalClientId,
       locationId: locationId,
@@ -111,12 +105,12 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
       notes: `Treatment requested: ${treatmentType}${staffId && staffId !== 'first-available' ? `, Preferred staff: ${staffId}` : ''}${isFlexible ? ', Flexible timing' : ''}`
     };
 
-    const authHeader = 'Basic ' + Buffer.from(process.env.BOULEVARD_API_KEY + ':').toString('base64');
+    const basicAuthHeader = 'Basic ' + Buffer.from(process.env.BOULEVARD_API_KEY + ':').toString('base64');
 
     const response = await fetch(process.env.BOULEVARD_ADMIN_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': authHeader,
+        'Authorization': basicAuthHeader,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -131,12 +125,11 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
     const data = await response.json();
 
     if (data.errors && data.errors.length > 0) {
-      console.error('Create appointment error:', data.errors);
       return res.status(400).json({ error: data.errors[0].message });
     }
 
     const appointment = data.data.createAppointment.appointment;
-    
+
     return res.status(200).json({ 
       success: true,
       appointment: appointment,
@@ -144,7 +137,6 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
     });
 
   } catch (error) {
-    console.error('Booking creation error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
