@@ -1,7 +1,6 @@
 const fetch = require('node-fetch');
 
 export default async function handler(req, res) {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -35,11 +34,11 @@ export default async function handler(req, res) {
       }
     `;
 
-const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
+    const basicAuthHeader = 'Basic ' + Buffer.from(process.env.BOULEVARD_API_KEY + ':').toString('base64');
     const response = await fetch(process.env.BOULEVARD_ADMIN_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': authHeader,
+        'Authorization': basicAuthHeader,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -54,16 +53,13 @@ const authHeader = 'Basic ' + btoa(process.env.BOULEVARD_API_KEY + ':');
     const data = await response.json();
 
     if (data.errors && data.errors.length > 0) {
-      console.error('GraphQL Error:', data.errors);
       return res.status(400).json({ error: data.errors[0].message });
     }
 
     const staff = data.data.location ? data.data.location.staff : [];
-    
     return res.status(200).json({ staff });
 
   } catch (error) {
-    console.error('Staff lookup error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
