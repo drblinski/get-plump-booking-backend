@@ -1,1285 +1,478 @@
-can ou please correct this code make it functional I want to be able to see a booking component with a calendar as part of the steps showing available slots and also be able to see staff schedules on a calendar and I want the API to show the images of staff too <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get Plump Booking</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #f5f5f7;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .booking-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 480px;
-            min-height: 500px;
-            padding: 40px 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .booking-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .booking-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #1d1d1f;
-            margin-bottom: 8px;
-        }
-
-        .booking-subtitle {
-            font-size: 16px;
-            color: #86868b;
-            font-weight: 400;
-        }
-
-        .booking-section {
-            display: none;
-        }
-
-        .booking-section.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1d1d1f;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .pill-button {
-            display: block;
-            width: 100%;
-            padding: 16px 20px;
-            margin-bottom: 12px;
-            background: #f5f5f7;
-            border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 500;
-            color: #1d1d1f;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-            text-decoration: none;
-        }
-
-        .pill-button:hover {
-            background: #e8e8ed;
-            transform: translateY(-1px);
-        }
-
-        .pill-button:active {
-            transform: translateY(0);
-        }
-
-        .pill-button.primary {
-            background: #007aff;
-            color: white;
-        }
-
-        .pill-button.primary:hover {
-            background: #0056cc;
-        }
-
-        .pill-button.selected {
-            background: #007aff;
-            color: white;
-        }
-
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #007aff;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 50%;
-            display: none;
-        }
-
-        .back-button.show {
-            display: block;
-        }
-
-        .back-button:hover {
-            background: #f0f0f0;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #86868b;
-        }
-
-        .loading-spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #007aff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #1d1d1f;
-            margin-bottom: 8px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1px solid #d2d2d7;
-            border-radius: 12px;
-            font-size: 16px;
-            background: white;
-            transition: border-color 0.2s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #007aff;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .calendar-day {
-            aspect-ratio: 1;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            background: #f5f5f7;
-            transition: all 0.2s ease;
-        }
-
-        .calendar-day:hover {
-            background: #e8e8ed;
-        }
-
-        .calendar-day.available {
-            background: #007aff;
-            color: white;
-        }
-
-        .calendar-day.selected {
-            background: #0056cc;
-            color: white;
-        }
-
-        .calendar-day.header {
-            background: none;
-            cursor: default;
-            font-weight: bold;
-            color: #1d1d1f;
-        }
-
-        .calendar-day.empty {
-            background: none;
-            cursor: default;
-        }
-
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        .time-slot {
-            padding: 12px 8px;
-            background: #f5f5f7;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .time-slot:hover {
-            background: #e8e8ed;
-        }
-
-        .time-slot.selected {
-            background: #007aff;
-            color: white;
-        }
-
-        /* Location color codes */
-        .location-west-village {
-            background: #007aff;
-            color: white;
-        }
-
-        .location-soho {
-            background: #34c759;
-            color: white;
-        }
-
-        .location-tribeca {
-            background: #ff3b30;
-            color: white;
-        }
-
-        .location-williamsburg {
-            background: #ff9500;
-            color: white;
-        }
-
-        .location-hoboken {
-            background: #af52de;
-            color: white;
-        }
-
-        .location-uptown {
-            background: #5ac8fa;
-            color: white;
-        }
-
-        .location-miami {
-            background: #ff2d55;
-            color: white;
-        }
-
-        .time-slot.location-west-village:hover,
-        .time-slot.location-soho:hover,
-        .time-slot.location-tribeca:hover,
-        .time-slot.location-williamsburg:hover,
-        .time-slot.location-hoboken:hover,
-        .time-slot.location-uptown:hover,
-        .time-slot.location-miami:hover {
-            opacity: 0.8;
-        }
-
-        .time-slot.selected {
-            background: #0056cc !important;
-            color: white;
-        }
-
-        @media (max-width: 480px) {
-            .booking-container {
-                margin: 0;
-                border-radius: 0;
-                min-height: 100vh;
-                padding: 60px 20px 40px;
-            }
-
-            .booking-title {
-                font-size: 24px;
-            }
-
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-
-            .time-slots {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Get Plump Booking Widget</title>
+  <style>
+    /* —— Reset & Base —— */
+    * { margin:0; padding:0; box-sizing:border-box }
+    body { font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+      background:#f5f5f7; display:flex; align-items:center; justify-content:center;
+      height:100vh; }
+    .widget { width:100%; max-width:600px; background:#fff; border-radius:12px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.1); display:flex; flex-direction:column;
+      height:90vh; overflow:hidden; }
+    .header { padding:16px; text-align:center; border-bottom:1px solid #e5e5e7; }
+    .header h1 { font-size:1.25rem; color:#1d1d1f; }
+    #messages { flex:1; overflow-y:auto; padding:16px; }
+    .msg { margin-bottom:16px; display:flex; }
+    .msg.system { justify-content:flex-start; }
+    .msg.user   { justify-content:flex-end;   }
+    .bubble { max-width:75%; padding:12px 16px; border-radius:16px; line-height:1.4; }
+    .msg.system .bubble { background:#e9e9eb; color:#1d1d1f; border-bottom-left-radius:4px; }
+    .msg.user   .bubble { background:#007AFF; color:#fff; border-bottom-right-radius:4px; }
+    button { cursor:pointer; border:none; }
+    .grid { display:grid; gap:12px; margin-top:8px; }
+    .button { background:#fff; border:2px solid #e5e5e7; padding:12px;
+      border-radius:12px; text-align:center; font-weight:500; transition:all .2s; }
+    .button:hover { border-color:#007AFF; transform:translateY(-2px); }
+    .primary { background:#007AFF; color:#fff; padding:12px 20px; border-radius:12px; }
+    .primary:hover { background:#0056d6; }
+    .input { width:100%; padding:10px; margin-bottom:8px;
+      border:2px solid #e5e5e7; border-radius:8px; font-size:1rem; }
+  </style>
 </head>
 <body>
-    <div class="booking-container">
-        <button class="back-button" onclick="bookingApp.goBack()">←</button>
-        
-        <div class="booking-header">
-            <h1 class="booking-title">Get Plump</h1>
-            <p class="booking-subtitle">Book your appointment</p>
-        </div>
+  <div class="widget">
+    <div class="header"><h1>Book Your Plump Appointment</h1></div>
+    <div id="messages"></div>
+  </div>
 
-        <!-- Flow Selection -->
-        <div id="flow-selection" class="booking-section active">
-            <h2 class="section-title">How would you like to book?</h2>
-            <button class="pill-button" onclick="bookingApp.startLocationFlow()">
-                Start with Location
-            </button>
-            <button class="pill-button" onclick="bookingApp.startStaffFlow()">
-                Start with Staff Member
-            </button>
-            <button class="pill-button" onclick="bookingApp.startSchedulesFlow()">
-                View Staff Schedules
-            </button>
-        </div>
+  <script>
+  // —— Configuration —— 
+  const BOULEVARD_API = '/api/blvd';
+  const LOCATIONS = {
+    'West Village':'ffaaff3c-d5ba-408e-ba3b-455554b77116',
+    SoHo:'89763e68-2454-429c-ae9c-c1b4d91e7b81',
+    Tribeca:'43dfb866-a872-4f01-9491-6c6584e3c3e7',
+    Miami:'1cbb848e-138b-4142-bc3d-b9f4ea9a42db'
+  };
+  const STAFF = [
+    { id:'s1', name:'Dr Sarah Johnson', locations:['West Village','SoHo'] },
+    { id:'s2', name:'Dr Alex Kim',       locations:['Tribeca','Miami']   },
+    { id:'s3', name:'Dr Maria Chen',     locations:['SoHo','Tribeca']   }
+  ];
 
-        <!-- Location Selection -->
-        <div id="location-selection" class="booking-section">
-            <h2 class="section-title">Select Location</h2>
-            <div id="locations-list">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    Loading locations...
-                </div>
-            </div>
-        </div>
+  // —— State ——
+  let state = {
+    flow:null,          // 'A'|'B'|'C'
+    location:null,
+    treatment:null,     // 'injectable'|'skincare'
+    serviceId:null, serviceName:null,
+    staffId:null,   staffName:null,
+    cartId:null,
+    timeSlot:{ id:null, label:null, location:null },
+    client:{ firstName:'', lastName:'', email:'', phone:'' },
+    // For Flow C:
+    staffAvailabilityData:{}  // { 'YYYY-MM-DD': [ {id, startTime, locationName}, … ] }
+  };
+  let currentCalendarDate = null;
 
-        <!-- Category Selection -->
-        <div id="category-selection" class="booking-section">
-            <h2 class="section-title">Select Category</h2>
-            <div class="grid-2">
-                <button class="pill-button" onclick="bookingApp.selectCategory('skincare')">
-                    Skincare
-                </button>
-                <button class="pill-button" onclick="bookingApp.selectCategory('injectable')">
-                    Injectable
-                </button>
-            </div>
-        </div>
+  // —— GraphQL helper ——
+  function gql(query, variables={}) {
+    return fetch(BOULEVARD_API, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ query, variables })
+    }).then(r=>r.json());
+  }
 
-        <!-- Services Selection -->
-        <div id="services-selection" class="booking-section">
-            <h2 class="section-title">Select Service</h2>
-            <div id="services-list"></div>
-        </div>
+  // —— UI helpers ——
+  function addMessage(who, html, cb) {
+    const m = document.createElement('div');
+    m.className = 'msg ' + who;
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    b.innerHTML = html;
+    m.appendChild(b);
+    document.getElementById('messages').appendChild(m);
+    m.scrollIntoView({ behavior:'smooth' });
+    if (cb) setTimeout(cb, 400);
+  }
+  function makeButton(text, onClick, cls='button') {
+    const btn = document.createElement('button');
+    btn.className = cls;
+    btn.textContent = text;
+    btn.onclick = onClick;
+    return btn;
+  }
 
-        <!-- Staff Options -->
-        <div id="staff-options" class="booking-section">
-            <h2 class="section-title">Choose Staff</h2>
-            <button class="pill-button primary" onclick="bookingApp.selectFirstAvailable()">
-                First Available
-            </button>
-            <button class="pill-button" onclick="bookingApp.showStaffSelection()">
-                Select Staff Member
-            </button>
-        </div>
+  // —— Flows Entry ——
+  function start() {
+    addMessage('system','Welcome! Choose how to book:', ()=>{
+      const grid = document.createElement('div'); grid.className='grid';
+      grid.appendChild(makeButton('A) By Location ▶︎ Category ▶︎…', ()=>{ state.flow='A'; flowA_start(); }));
+      grid.appendChild(makeButton('B) By Staff ▶︎ Quick Time ▶︎…', ()=>{ state.flow='B'; flowB_start(); }));
+      grid.appendChild(makeButton('C) Staff Availability ▶︎ Calendar ▶︎…', ()=>{ state.flow='C'; flowC_start(); }));
+      addMessage('system', grid.outerHTML);
+    });
+  }
 
-        <!-- Staff Selection -->
-        <div id="staff-selection" class="booking-section">
-            <h2 class="section-title">Select Staff Member</h2>
-            <div id="staff-list">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    Loading staff...
-                </div>
-            </div>
-        </div>
+  // —— FLOW A —— Location → Treatment → Service → First/Staff → Info → Booking
+  function flowA_start() {
+    addMessage('system','Select location:', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      for (let loc in LOCATIONS) {
+        g.appendChild(makeButton(loc, ()=>{
+          state.location=loc; addMessage('user',loc, flowA_chooseTreatment);
+        }));
+      }
+      addMessage('system',g.outerHTML);
+    });
+  }
+  function flowA_chooseTreatment() {
+    addMessage('system','Select treatment type:', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      [['Injectable','injectable'],['Skincare','skincare']].forEach(([lab,val])=>{
+        g.appendChild(makeButton(lab, ()=>{
+          state.treatment=val; addMessage('user',lab, flowA_loadServices);
+        }));
+      });
+      addMessage('system',g.outerHTML);
+    });
+  }
+  function flowA_loadServices() {
+    addMessage('system','Loading services…');
+    const Q = `
+      mutation($loc:ID!){ createCart(input:{locationId:$loc}){
+        cart{id availableCategories{name availableItems{id name listPrice}}}
+      }}`;
+    const locUrn = 'urn:blvd:Location:'+LOCATIONS[state.location];
+    gql(Q,{loc:locUrn})
+      .then(r=>{
+        state.cartId = r.data.createCart.cart.id;
+        const items = r.data.createCart.cart.availableCategories
+          .flatMap(c=>c.availableItems)
+          .filter(it=>{
+            const n=it.name.toLowerCase();
+            return state.treatment==='injectable'
+              ? /(botox|filler|inject)/.test(n)
+              : /(laser|microneedling|peel|hydrafacial)/.test(n);
+          });
+        const g=document.createElement('div'); g.className='grid';
+        items.forEach(it=>{
+          g.appendChild(makeButton(
+            `${it.name} – $${Math.round(it.listPrice/100)}`,
+            ()=>{ state.serviceId=it.id; state.serviceName=it.name;
+                   addMessage('user',it.name, flowA_chooseFirstOrStaff); }
+          ));
+        });
+        addMessage('system', g.outerHTML);
+      });
+  }
+  function flowA_chooseFirstOrStaff() {
+    addMessage('system','First available or pick staff?', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      [['First Available','first'],['Select Staff','staff']].forEach(([lab, val])=>{
+        g.appendChild(makeButton(lab, ()=>{
+          addMessage('user',lab);
+          val==='first' ? flowA_reserveFirst() : flowA_pickStaff();
+        }));
+      });
+      addMessage('system',g.outerHTML);
+    });
+  }
+  function flowA_reserveFirst()    { flowA_completeBooking(); }
+  function flowA_pickStaff() {
+    addMessage('system','Select staff:', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      STAFF.forEach(s=>{
+        g.appendChild(makeButton(s.name, ()=>{
+          state.staffId=s.id; state.staffName=s.name;
+          addMessage('user',s.name, ()=>flowA_completeBooking());
+        }));
+      });
+      addMessage('system',g.outerHTML);
+    });
+  }
+  function flowA_completeBooking() {
+    // 1) add item
+    const addQ = `
+      mutation($cart:ID!,$item:ID!){ addCartSelectedBookableItem(input:{
+        id:$cart,itemId:$item }){ cart{id} } }`;
+    gql(addQ,{cart:state.cartId,item:state.serviceId})
+      .then(()=>flow_reserveTime());
+  }
 
-        <!-- Calendar -->
-        <div id="calendar-selection" class="booking-section">
-            <h2 class="section-title">Select Date & Time</h2>
-            <div id="calendar-container">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    Loading availability...
-                </div>
-            </div>
-        </div>
+  // —— FLOW B —— Staff → Quick Time → Treatment → Info → Booking
+  function flowB_start() {
+    addMessage('system','Select staff for quick booking:', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      STAFF.forEach(s=>{
+        g.appendChild(makeButton(s.name, ()=>{
+          state.staffId=s.id; state.staffName=s.name;
+          addMessage('user',s.name, flowB_quickTimes);
+        }));
+      });
+      addMessage('system',g.outerHTML);
+    });
+  }
+  function flowB_quickTimes() {
+    addMessage('system','Loading next available slots…');
+    // mock three times
+    const slots=[ 'Tomorrow 10:00 AM','Tomorrow 2:00 PM','Day After 9:00 AM' ];
+    const g=document.createElement('div'); g.className='grid';
+    slots.forEach((t,i)=>g.appendChild(makeButton(t, ()=>{
+      state.timeSlot={id:'t'+i,label:t,location:state.staffName};
+      addMessage('user',t, flowB_chooseTreatment);
+    })));
+    addMessage('system',g.outerHTML);
+  }
+  function flowB_chooseTreatment() {
+    addMessage('system','Select treatment type:', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      [['Injectable','injectable'],['Skincare','skincare']].forEach(([lab,val])=>{
+        g.appendChild(makeButton(lab, ()=>{
+          state.treatment=val; addMessage('user',lab, flow_completeBooking);
+        }));
+      });
+      addMessage('system',g.outerHTML);
+    });
+  }
 
-        <!-- Patient Info -->
-        <div id="patient-info" class="booking-section">
-            <h2 class="section-title">Patient Information</h2>
-            <form id="patient-form">
-                <div class="form-group">
-                    <label class="form-label">First Name</label>
-                    <input type="text" class="form-input" name="firstName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Last Name</label>
-                    <input type="text" class="form-input" name="lastName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Phone</label>
-                    <input type="tel" class="form-input" name="phone" required>
-                </div>
-                <button type="submit" class="pill-button primary">
-                    Book Appointment
-                </button>
-            </form>
-        </div>
+  // —— FLOW C —— Staff Availability → Calendar → Date → Time → Info → Booking
+  function flowC_start() {
+    addMessage('system','Select staff to view full calendar:', ()=>{
+      const g=document.createElement('div'); g.className='grid';
+      STAFF.forEach(s=>{
+        g.appendChild(makeButton(s.name, ()=>{
+          state.staffId=s.id; state.staffName=s.name;
+          // create a cart at first staffed location
+          const loc = s.locations[0]; state.location=loc;
+          const Q=`mutation($loc:ID!){createCart(input:{locationId:$loc}){cart{id}}}`;
+          gql(Q,{loc:'urn:blvd:Location:'+LOCATIONS[loc]})
+            .then(r=>{ state.cartId = r.data.createCart.cart.id;
+                       addMessage('user',s.name, flowC_loadCalendar); });
+        }));
+      });
+      addMessage('system',g.outerHTML);
+    });
+  }
+  function initializeCalendar() {
+    if(!currentCalendarDate){
+      currentCalendarDate=new Date();
+      currentCalendarDate.setDate(1);
+      currentCalendarDate.setHours(0,0,0,0);
+    }
+  }
+  function flowC_loadCalendar() {
+    state.staffAvailabilityData={};
+    initializeCalendar();
+    renderStaffCalendar();
+    loadStaffAvailabilityForMonth();
+  }
+  function renderStaffCalendar() {
+    const container = document.getElementById('messages');
+    // remove last calendar if exists
+    const old = container.querySelector('.staff-calendar');
+    if(old) old.remove();
 
-        <!-- Success -->
-        <div id="booking-success" class="booking-section">
-            <h2 class="section-title">Booking Confirmed!</h2>
-            <p style="text-align: center; color: #86868b; margin-bottom: 30px;">
-                Your appointment has been successfully booked.
-            </p>
-            <button class="pill-button" onclick="bookingApp.restart()">
-                Book Another Appointment
-            </button>
-        </div>
-    </div>
+    const wrap = document.createElement('div');
+    wrap.className='msg system staff-calendar';
+    const b = document.createElement('div'); b.className='bubble';
 
-    <script>
-        // Boulevard API Configuration
-        const BOULEVARD_CONFIG = {
-            businessId: 'f6a06736-1132-4365-b79a-a69c648a746a',
-            apiKey: '93ca3f15-6f0e-491d-840b-681a0fef80ed',
-            apiUrl: 'https://dashboard.boulevard.io/api/2020-01/f6a06736-1132-4365-b79a-a69c648a746a/client'
-        };
+    // header
+    const header = document.createElement('div');
+    header.style.display='flex';
+    header.style.justifyContent='space-between';
+    header.style.marginBottom='8px';
+    ['←','→'].forEach((sym,i)=>{
+      const btn = document.createElement('button');
+      btn.textContent = i===0?sym+' Prev Month':'Next Month '+sym;
+      btn.className='button';
+      btn.onclick = ()=>{
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + (i===0?-1:1));
+        state.staffAvailabilityData={}; 
+        renderStaffCalendar();
+        loadStaffAvailabilityForMonth();
+      };
+      header.appendChild(btn);
+    });
+    const title = document.createElement('div');
+    title.textContent = state.staffName + ' Availability – ' +
+      currentCalendarDate.toLocaleDateString('en-US',{ month:'long',year:'numeric'});
+    title.style.alignSelf='center';
+    header.insertBefore(title, header.children[1]);
+    b.appendChild(header);
 
-        const LOCATIONS_DATA = {
-            'West Village': { 
-                locationId: 'ffaaff3c-d5ba-408e-ba3b-455554b77116'
-            },
-            'SoHo': { 
-                locationId: '89763e68-2454-429c-ae9c-c1b4d91e7b81'
-            },
-            'Tribeca': { 
-                locationId: '43dfb866-a872-4f01-9491-6c6584e3c3e7'
-            },
-            'Williamsburg': { 
-                locationId: '93566b17-c023-4fe1-9a84-462f143bd024'
-            },
-            'Hoboken': { 
-                locationId: 'a885e859-21ef-43c7-8a63-bb242db98de2'
-            },
-            'Uptown': { 
-                locationId: 'b146c47b-6de8-475a-8ebd-8a1d2b36546d'
-            },
-            'Miami': { 
-                locationId: '1cbb848e-138b-4142-bc3d-b9f4ea9a42db'
-            }
-        };
+    // day names
+    const grid = document.createElement('div');
+    grid.className='grid';
+    grid.style.gridTemplateColumns='repeat(7,1fr)';
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+      .forEach(d=>{ const dEl=document.createElement('div');
+                    dEl.textContent=d;
+                    dEl.style.textAlign='center';
+                    grid.appendChild(dEl);
+                  });
 
-        // Service Categories
-        const SERVICE_CATEGORIES = {
-            skincare: ['Laser', 'Peels', 'Microneedling', 'Hydrafacial'],
-            injectable: ['Botox', 'Filler', 'Lip Filler', 'Sculptra', 'BBL', 'Dissolve', 'Kybella']
-        };
+    // dates
+    const year = currentCalendarDate.getFullYear();
+    const month= currentCalendarDate.getMonth();
+    const firstDay=new Date(year,month,1).getDay();
+    const daysInMonth=new Date(year,month+1,0).getDate();
+    // blanks
+    for(let i=0;i<firstDay;i++){
+      const cell=document.createElement('div');
+      cell.style.height='60px';
+      grid.appendChild(cell);
+    }
+    // actual days
+    for(let d=1;d<=daysInMonth;d++){
+      const date=new Date(year,month,d);
+      const ds = date.toISOString().split('T')[0];
+      const cell=document.createElement('div');
+      cell.style.border='1px solid #e5e5e7';
+      cell.style.borderRadius='8px';
+      cell.style.padding='4px';
+      cell.style.cursor='pointer';
+      cell.onclick = ()=>flowC_showTimesForDate(date);
+      // highlight if availability
+      if(state.staffAvailabilityData[ds] &&
+         state.staffAvailabilityData[ds].length>0){
+        cell.style.background='#e0f7ea';
+      }
+      const num=document.createElement('div');
+      num.textContent=d;
+      num.style.fontWeight='500';
+      cell.appendChild(num);
+      grid.appendChild(cell);
+    }
+    b.appendChild(grid);
 
-        // Boulevard API helper
-        function makeBoulevardRequest(query, variables = {}) {
-            console.log('🔥 Making Boulevard request:', { query: query.substring(0, 100) + '...', variables });
-            
-            return fetch(BOULEVARD_CONFIG.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Basic ' + btoa(BOULEVARD_CONFIG.apiKey + ':'),
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    query: query,
-                    variables: variables
-                })
-            })
-            .then(response => {
-                console.log('🔥 Boulevard response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('🔥 Boulevard response data:', data);
-                if (data.errors && data.errors.length > 0) {
-                    console.error('🔥 Boulevard GraphQL errors:', data.errors);
-                    throw new Error(`GraphQL Error: ${data.errors[0].message}`);
-                }
-                return data.data;
-            })
-            .catch(error => {
-                console.error('🔥 Boulevard request failed:', error);
-                throw error;
-            });
+    // time-slots container
+    const tsCont = document.createElement('div');
+    tsCont.className='staff-times';
+    tsCont.style.marginTop='12px';
+    b.appendChild(tsCont);
+
+    wrap.appendChild(b);
+    container.appendChild(wrap);
+    wrap.scrollIntoView({behavior:'smooth'});
+  }
+  function loadStaffAvailabilityForMonth(){
+    const year=currentCalendarDate.getFullYear();
+    const month=currentCalendarDate.getMonth();
+    const days=new Date(year,month+1,0).getDate();
+    const calls=[];
+    for(let d=1; d<=days; d++){
+      const date=new Date(year,month,d);
+      if(date>=new Date()){
+        calls.push(loadStaffAvailabilityForDate(date));
+      }
+    }
+    Promise.all(calls).then(renderStaffCalendar);
+  }
+  function loadStaffAvailabilityForDate(date){
+    const ds=date.toISOString().split('T')[0];
+    const Q = `
+      query($staff:ID!,$date:Date!){
+        staffAvailability(staffId:$staff,searchDate:$date){
+          id,startTime,location{name}
         }
-
-        // Booking App State Management
-        const bookingApp = {
-            state: {
-                currentFlow: null,
-                currentStep: 'flow-selection',
-                selectedLocation: null,
-                selectedCategory: null,
-                selectedService: null,
-                selectedStaff: null,
-                selectedDateTime: null,
-                cartId: null,
-                availableStaff: [],
-                availableServices: [],
-                history: [],
-                locationCarts: {},
-                selectedDate: null,
-                availability: {}
-            },
-
-            // Navigation
-            showSection(sectionId) {
-                document.querySelectorAll('.booking-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                document.getElementById(sectionId).classList.add('active');
-                
-                this.state.history.push(this.state.currentStep);
-                this.state.currentStep = sectionId;
-                
-                // Show/hide back button
-                const backButton = document.querySelector('.back-button');
-                if (sectionId === 'flow-selection') {
-                    backButton.classList.remove('show');
-                } else {
-                    backButton.classList.add('show');
-                }
-            },
-
-            goBack() {
-                if (this.state.history.length > 0) {
-                    const previousStep = this.state.history.pop();
-                    this.state.currentStep = previousStep;
-                    
-                    document.querySelectorAll('.booking-section').forEach(section => {
-                        section.classList.remove('active');
-                    });
-                    document.getElementById(previousStep).classList.add('active');
-                    
-                    // Hide back button on first screen
-                    if (previousStep === 'flow-selection') {
-                        document.querySelector('.back-button').classList.remove('show');
-                    }
-                }
-            },
-
-            restart() {
-                this.state = {
-                    currentFlow: null,
-                    currentStep: 'flow-selection',
-                    selectedLocation: null,
-                    selectedCategory: null,
-                    selectedService: null,
-                    selectedStaff: null,
-                    selectedDateTime: null,
-                    cartId: null,
-                    availableStaff: [],
-                    availableServices: [],
-                    history: [],
-                    locationCarts: {},
-                    selectedDate: null,
-                    availability: {}
-                };
-                this.showSection('flow-selection');
-            },
-
-            // FLOW 1: Start with Location
-            startLocationFlow() {
-                this.state.currentFlow = 'location';
-                this.showSection('location-selection');
-                this.loadLocations();
-            },
-
-            async loadLocations() {
-                try {
-                    const locationsList = document.getElementById('locations-list');
-                    locationsList.innerHTML = Object.keys(LOCATIONS_DATA).map(locationName => 
-                        `<button class="pill-button" onclick="bookingApp.selectLocation('${locationName}')">${locationName}</button>`
-                    ).join('');
-                } catch (error) {
-                    console.error('Error loading locations:', error);
-                    document.getElementById('locations-list').innerHTML = 
-                        '<p style="text-align: center; color: #ff3b30;">Unable to load locations. Please try again.</p>';
-                }
-            },
-
-            selectLocation(locationName) {
-                this.state.selectedLocation = {
-                    name: locationName,
-                    id: LOCATIONS_DATA[locationName].locationId
-                };
-                this.showSection('category-selection');
-            },
-
-            selectCategory(category) {
-                this.state.selectedCategory = category;
-                this.showSection('services-selection');
-                this.loadServices();
-            },
-
-            loadServices() {
-                const servicesList = document.getElementById('services-list');
-                const services = SERVICE_CATEGORIES[this.state.selectedCategory];
-                
-                servicesList.innerHTML = services.map(service => 
-                    `<button class="pill-button" onclick="bookingApp.selectService('${service}')">${service}</button>`
-                ).join('');
-            },
-
-            selectService(service) {
-                this.state.selectedService = service;
-                if (this.state.currentFlow === 'staff') {
-                    this.showSection('calendar-selection');
-                    this.loadStaffAvailability();
-                } else {
-                    this.showSection('staff-options');
-                }
-            },
-
-            selectFirstAvailable() {
-                this.state.selectedStaff = 'first-available';
-                this.showSection('patient-info');
-            },
-
-            showStaffSelection() {
-                this.showSection('staff-selection');
-                this.loadLocationStaff();
-            },
-
-            async loadLocationStaff() {
-                try {
-                    await this.createCart();
-                    
-                    const staffList = document.getElementById('staff-list');
-                    if (this.state.availableStaff.length > 0) {
-                        staffList.innerHTML = this.state.availableStaff.map(staff => 
-                            `<button class="pill-button" onclick="bookingApp.selectStaff('${staff.id}', '${staff.firstName} ${staff.lastName}')">
-                                ${staff.firstName} ${staff.lastName}
-                            </button>`
-                        ).join('');
-                    } else {
-                        // Fallback staff list
-                        staffList.innerHTML = `
-                            <button class="pill-button" onclick="bookingApp.selectStaff('staff1', 'Sarah Johnson')">
-                                Sarah Johnson
-                            </button>
-                            <button class="pill-button" onclick="bookingApp.selectStaff('staff2', 'Mike Chen')">
-                                Mike Chen
-                            </button>
-                            <button class="pill-button" onclick="bookingApp.selectStaff('staff3', 'Lisa Rodriguez')">
-                                Lisa Rodriguez
-                            </button>
-                        `;
-                    }
-                } catch (error) {
-                    console.error('Error loading location staff:', error);
-                    document.getElementById('staff-list').innerHTML = 
-                        '<p style="text-align: center; color: #ff3b30;">Unable to load staff. Please try again.</p>';
-                }
-            },
-
-            selectStaff(staffId, staffName) {
-                this.state.selectedStaff = { id: staffId, name: staffName };
-                this.showSection('patient-info');
-            },
-
-            // FLOW 2: Start with Staff
-            startStaffFlow() {
-                this.state.currentFlow = 'staff';
-                this.showSection('staff-selection');
-                this.loadAllStaff();
-            },
-
-            async loadAllStaff() {
-                try {
-                    // Load staff from all locations
-                    const allStaff = await this.loadStaffFromAllLocations();
-                    
-                    const staffList = document.getElementById('staff-list');
-                    if (allStaff.length > 0) {
-                        this.state.availableStaff = allStaff;
-                        staffList.innerHTML = allStaff.map(staff => 
-                            `<button class="pill-button" onclick="bookingApp.selectStaffForCalendar('${staff.id}', '${staff.firstName} ${staff.lastName}')">
-                                ${staff.firstName} ${staff.lastName} - ${staff.locations ? staff.locations.join(', ') : 'Multiple Locations'}
-                            </button>`
-                        ).join('');
-                    } else {
-                        // Enhanced mock staff
-                        const mockStaff = [
-                            { id: 'staff1', firstName: 'Sarah', lastName: 'Johnson', locations: ['West Village', 'SoHo'] },
-                            { id: 'staff2', firstName: 'Michael', lastName: 'Chen', locations: ['Tribeca', 'Williamsburg'] },
-                            { id: 'staff3', firstName: 'Emily', lastName: 'Rodriguez', locations: ['Hoboken', 'Uptown'] },
-                            { id: 'staff4', firstName: 'David', lastName: 'Thompson', locations: ['Miami', 'West Village'] }
-                        ];
-                        
-                        staffList.innerHTML = mockStaff.map(staff => 
-                            `<button class="pill-button" onclick="bookingApp.selectStaffForCalendar('${staff.id}', '${staff.firstName} ${staff.lastName}')">
-                                ${staff.firstName} ${staff.lastName} - ${staff.locations.join(', ')}
-                            </button>`
-                        ).join('');
-                    }
-                } catch (error) {
-                    console.error('Error loading all staff:', error);
-                    document.getElementById('staff-list').innerHTML = 
-                        '<p style="text-align: center; color: #ff3b30;">Unable to load staff. Please try again.</p>';
-                }
-            },
-
-            async loadStaffFromAllLocations() {
-                const locationEntries = Object.entries(LOCATIONS_DATA);
-                const staffMap = new Map();
-                
-                for (const [locationName, locationData] of locationEntries) {
-                    try {
-                        const locationId = locationData.locationId.startsWith('urn:blvd:Location:') ? 
-                            locationData.locationId : 'urn:blvd:Location:' + locationData.locationId;
-                        
-                        const query = `
-                            mutation CreateTempCart($locationId: ID!) {
-                                createCart(input: { locationId: $locationId }) {
-                                    cart {
-                                        id
-                                        availableCategories {
-                                            availableItems {
-                                                ... on CartAvailableBookableItem {
-                                                    staffVariants {
-                                                        staff {
-                                                            id
-                                                            firstName
-                                                            lastName
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        `;
-                        
-                        const data = await makeBoulevardRequest(query, { locationId });
-                        const cart = data.createCart.cart;
-                        
-                        if (cart.availableCategories) {
-                            cart.availableCategories.forEach(category => {
-                                category.availableItems.forEach(item => {
-                                    if (item.staffVariants) {
-                                        item.staffVariants.forEach(variant => {
-                                            if (variant.staff) {
-                                                if (!staffMap.has(variant.staff.id)) {
-                                                    staffMap.set(variant.staff.id, {
-                                                        ...variant.staff,
-                                                        locations: [locationName]
-                                                    });
-                                                } else {
-                                                    const staff = staffMap.get(variant.staff.id);
-                                                    if (!staff.locations.includes(locationName)) {
-                                                        staff.locations.push(locationName);
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-                                });
-                            });
-                        }
-                    } catch (error) {
-                        console.error(`Failed to load staff from ${locationName}:`, error);
-                    }
-                }
-                
-                return Array.from(staffMap.values());
-            },
-
-            selectStaffForCalendar(staffId, staffName) {
-                this.state.selectedStaff = { id: staffId, name: staffName };
-                this.showSection('category-selection');
-            },
-
-            async loadStaffAvailability() {
-                const calendarContainer = document.getElementById('calendar-container');
-                calendarContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading availability...</div>';
-
-                try {
-                    const staff = this.state.availableStaff.find(s => s.id === this.state.selectedStaff.id);
-                    if (!staff) throw new Error('Staff not found');
-                    const locations = staff.locations;
-                    if (locations.length === 0) {
-                        calendarContainer.innerHTML = '<p>No locations for this staff.</p>';
-                        return;
-                    }
-
-                    const today = new Date(2025, 6, 23); // 0-based month, July is 6
-                    const bookableDays = new Set();
-                    this.state.locationCarts = {};
-
-                    const locationPromises = locations.map(async (locationName) => {
-                        const locationId = LOCATIONS_DATA[locationName].locationId;
-                        const formattedLocationId = locationId.startsWith('urn:blvd:Location:') ? locationId : 'urn:blvd:Location:' + locationId;
-
-                        const createQuery = `
-                            mutation CreateCart($locationId: ID!) {
-                                createCart(input: { locationId: $locationId }) {
-                                    cart {
-                                        id
-                                        availableCategories {
-                                            availableItems {
-                                                id
-                                                name
-                                                ... on CartAvailableBookableItem {
-                                                    staffVariants {
-                                                        id
-                                                        staff {
-                                                            id
-                                                            firstName
-                                                            lastName
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        `;
-
-                        const data = await makeBoulevardRequest(createQuery, { locationId: formattedLocationId });
-                        const cart = data.createCart.cart;
-                        const cartId = cart.id;
-                        this.state.locationCarts[locationName] = cartId;
-
-                        let item = null;
-                        for (const category of cart.availableCategories) {
-                            item = category.availableItems.find(i => i.name === this.state.selectedService);
-                            if (item) break;
-                        }
-                        if (!item) return;
-
-                        const variant = item.staffVariants.find(v => v.staff.id === this.state.selectedStaff.id);
-                        if (!variant) return;
-
-                        const addInput = {
-                            cartId,
-                            availableItemId: item.id,
-                            availableItemVariantId: variant.id,
-                            quantity: 1
-                        };
-
-                        const addQuery = `
-                            mutation AddCartItem($input: AddCartItemInput!) {
-                                addCartItem(input: $input) {
-                                    cart {
-                                        id
-                                    }
-                                }
-                            }
-                        `;
-
-                        await makeBoulevardRequest(addQuery, { input: addInput });
-
-                        const startDate = new Date(today.getYear(), today.getMonth(), today.getDate() + 1);
-                        const dayPromises = [];
-                        for (let i = 0; i < 30; i++) {
-                            const currentDate = new Date(startDate);
-                            currentDate.setDate(currentDate.getDate() + i);
-                            const searchDate = currentDate.toISOString().split('T')[0];
-                            dayPromises.push(async () => {
-                                const slotsQuery = `
-                                    query GetCartBookableTimes($id: ID!, $searchDate: Date!) {
-                                        cartBookableTimes(id: $id, searchDate: $searchDate, tz: "America/New_York") {
-                                            id
-                                            startTime
-                                        }
-                                    }
-                                `;
-                                const slotsData = await makeBoulevardRequest(slotsQuery, { id: cartId, searchDate });
-                                const times = slotsData.cartBookableTimes || [];
-                                if (times.length > 0) {
-                                    bookableDays.add(searchDate);
-                                }
-                            }());
-                        }
-                        await Promise.all(dayPromises);
-                    });
-                    await Promise.all(locationPromises);
-
-                    // Build calendar for next 30 days
-                    const startDate = new Date(today);
-                    startDate.setDate(startDate.getDate() + 1);
-                    const dates = [];
-                    for (let i = 0; i < 30; i++) {
-                        const d = new Date(startDate);
-                        d.setDate(d.getDate() + i);
-                        dates.push(d);
-                    }
-
-                    const firstDayWeek = dates[0].getDay();
-                    const daysWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-                    let html = '<div class="calendar-grid">';
-                    daysWeek.forEach(day => {
-                        html += `<div class="calendar-day header">${day}</div>`;
-                    });
-
-                    for (let i = 0; i < firstDayWeek; i++) {
-                        html += '<div class="calendar-day empty"></div>';
-                    }
-
-                    dates.forEach(d => {
-                        const dateStr = d.toISOString().split('T')[0];
-                        const isAvailable = bookableDays.has(dateStr);
-                        const className = isAvailable ? 'calendar-day available' : 'calendar-day';
-                        const onclick = isAvailable ? `onclick="bookingApp.selectDate('${dateStr}')"` : '';
-                        html += `<div class="${className}" ${onclick}>${d.getDate()}</div>`;
-                    });
-
-                    const remaining = (7 - ((firstDayWeek + 30) % 7)) % 7;
-                    for (let i = 0; i < remaining; i++) {
-                        html += '<div class="calendar-day empty"></div>';
-                    }
-
-                    html += '</div><div class="time-slots" id="time-slots"></div>';
-                    calendarContainer.innerHTML = html;
-
-                } catch (error) {
-                    console.error('Error loading staff availability:', error);
-                    calendarContainer.innerHTML = '<p style="text-align: center; color: #ff3b30;">Unable to load calendar. Please try again.</p>';
-                }
-            },
-
-            selectDate(date) {
-                document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
-                event.target.classList.add('selected');
-                this.state.selectedDate = date;
-                this.loadTimeSlots(date);
-            },
-
-            async loadTimeSlots(date) {
-                const timeSlotsContainer = document.getElementById('time-slots');
-                timeSlotsContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading times...</div>';
-
-                try {
-                    let allSlots = [];
-
-                    const promises = Object.entries(this.state.locationCarts).map(async ([locationName, cartId]) => {
-                        const searchDate = date;
-                        const slotsQuery = `
-                            query GetCartBookableTimes($id: ID!, $searchDate: Date!) {
-                                cartBookableTimes(id: $id, searchDate: $searchDate, tz: "America/New_York") {
-                                    id
-                                    startTime
-                                }
-                            }
-                        `;
-                        const slotsData = await makeBoulevardRequest(slotsQuery, { id: cartId, searchDate });
-                        const times = slotsData.cartBookableTimes || [];
-                        times.forEach(t => {
-                            allSlots.push({
-                                startAt: t.startTime,
-                                location: locationName,
-                                cartId: cartId
-                            });
-                        });
-                    });
-
-                    await Promise.all(promises);
-
-                    allSlots.sort((a, b) => a.startAt.localeCompare(b.startAt));
-
-                    let html = '';
-                    allSlots.forEach(slot => {
-                        const time = new Date(slot.startAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-                        const slug = slot.location.toLowerCase().replace(/ /g, '-');
-                        html += `<button class="time-slot location-${slug}" onclick="bookingApp.selectTime('${slot.startAt}', '${slot.location}', '${slot.cartId}')">${time}</button>`;
-                    });
-
-                    timeSlotsContainer.innerHTML = html;
-                } catch (error) {
-                    console.error('Error loading time slots:', error);
-                    timeSlotsContainer.innerHTML = '<p style="text-align: center; color: #ff3b30;">Unable to load times. Please try again.</p>';
-                }
-            },
-
-            selectTime(startAt, location, cartId) {
-                document.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
-                event.target.classList.add('selected');
-                this.state.selectedDateTime = { startAt, location, cartId };
-                this.showSection('patient-info');
-            },
-
-            // New Schedules Flow
-            startSchedulesFlow() {
-                this.state.currentFlow = 'schedules';
-                this.state.selectedLocation = { name: 'West Village', id: 'ffaaff3c-d5ba-408e-ba3b-455554b77116' };
-                this.showSection('calendar-selection');
-                this.loadSchedules();
-            },
-
-            async loadSchedules() {
-                const container = document.getElementById('calendar-container');
-                container.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading schedules...</div>';
-
-                try {
-                    const formattedLocationId = 'urn:blvd:Location:' + this.state.selectedLocation.id;
-
-                    const createQuery = `
-                        mutation ($locationId: ID!) {
-                            createCart(input: { locationId: $locationId }) {
-                                cart {
-                                    id
-                                    availableCategories {
-                                        availableItems {
-                                            id
-                                            name
-                                            __typename
-                                            ... on CartAvailableBookableItem {
-                                                staffVariants {
-                                                    id
-                                                    staff {
-                                                        id
-                                                        firstName
-                                                        lastName
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    `;
-                    const createData = await makeBoulevardRequest(createQuery, { locationId: formattedLocationId });
-                    this.state.cartId = createData.createCart.cart.id;
-
-                    let availableItemId = null;
-                    let availableItemVariantId = null;
-                    for (const category of createData.createCart.cart.availableCategories) {
-                        for (const item of category.availableItems) {
-                            if (item.__typename === 'CartAvailableBookableItem' && item.staffVariants.length > 0) {
-                                availableItemId = item.id;
-                                availableItemVariantId = item.staffVariants[0].id;
-                                break;
-                            }
-                        }
-                        if (availableItemId) break;
-                    }
-
-                    if (!availableItemId) throw new Error('No bookable items found');
-
-                    const addQuery = `
-                        mutation ($input: AddCartItemInput!) {
-                            addCartItem(input: $input) {
-                                cart { id }
-                            }
-                        }
-                    `;
-                    const addInput = {
-                        cartId: this.state.cartId,
-                        availableItemId,
-                        availableItemVariantId,
-                        quantity: 1
-                    };
-                    await makeBoulevardRequest(addQuery, { input: addInput });
-
-                    const today = new Date(2025, 6, 23);
-                    const startDate = new Date(today);
-                    startDate.setDate(startDate.getDate() + 1);
-                    this.state.availability = {};
-
-                    const dayPromises = [];
-                    for (let i = 0; i < 30; i++) {
-                        const currentDate = new Date(startDate);
-                        currentDate.setDate(currentDate.getDate() + i);
-                        const searchDate = currentDate.toISOString().split('T')[0];
-                        dayPromises.push(async () => {
-                            const timesQuery = `
-                                query ($cartId: ID!, $searchDate: Date!) {
-                                    cartBookableTimes(id: $cartId, searchDate: $searchDate, tz: "America/New_York") {
-                                        id
-                                        startTime
-                                    }
-                                }
-                            `;
-                            const timesData = await makeBoulevardRequest(timesQuery, { cartId: this.state.cartId, searchDate });
-                            const times = timesData.cartBookableTimes || [];
-                            if (times.length > 0) {
-                                this.state.availability[searchDate] = times.map(t => t.startTime).sort();
-                            }
-                        }());
-                    }
-                    await Promise.all(dayPromises);
-
-                    const dates = [];
-                    for (let i = 0; i < 30; i++) {
-                        const d = new Date(startDate);
-                        d.setDate(d.getDate() + i);
-                        dates.push(d);
-                    }
-
-                    const firstDayWeek = dates[0].getDay();
-                    const daysWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-                    let html = '<div class="calendar-grid">';
-                    daysWeek.forEach(day => {
-                        html += `<div class="calendar-day header">${day}</div>`;
-                    });
-
-                    for (let i = 0; i < firstDayWeek; i++) {
-                        html += '<div class="calendar-day empty"></div>';
-                    }
-
-                    dates.forEach(d => {
-                        const dateStr = d.toISOString().split('T')[0];
-                        const isAvailable = !!this.state.availability[dateStr];
-                        const availClass = isAvailable ? 'available' : '';
-                        const onclick = isAvailable ? `onclick="bookingApp.selectDate('${dateStr}')"` : '';
-                        html += `<div class="calendar-day ${availClass}" ${onclick}>${d.getDate()}</div>`;
-                    });
-
-                    const remaining = (7 - ((firstDayWeek + 30) % 7)) % 7;
-                    for (let i = 0; i < remaining; i++) {
-                        html += '<div class="calendar-day empty"></div>';
-                    }
-
-                    html += '</div><div class="time-slots" id="time-slots"></div>';
-                    container.innerHTML = html;
-
-                } catch (error) {
-                    console.error(error);
-                    container.innerHTML = '<p style="text-align: center; color: #ff3b30;">Error loading schedules. Please try again.</p>';
-                }
-            },
-
-            showTimes(dateStr) {
-                const times = this.state.availability[dateStr] || [];
-                let html = '';
-                times.forEach(t => {
-                    const timeDate = new Date(t);
-                    const timeStr = timeDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                    html += `<button class="time-slot">${timeStr}</button>`;
-                });
-                document.getElementById('time-slots').innerHTML = html;
-            },
-
-            // Cart Creation
-            async createCart() {
-                if (this.state.cartId) return; // Cart already exists
-                
-                const formattedLocationId = this.state.selectedLocation.id.startsWith('urn:blvd:Location:') ? 
-                    this.state.selectedLocation.id : 'urn:blvd:Location:' + this.state.selectedLocation.id;
-                
-                const query = `
-                    mutation CreateCart($locationId: ID!) {
-                        createCart(input: { locationId: $locationId }) {
-                            cart {
-                                id
-                                availableCategories {
-                                    availableItems {
-                                        id
-                                        name
-                                        ... on CartAvailableBookableItem {
-                                            staffVariants {
-                                                id
-                                                staff {
-                                                    id
-                                                    firstName
-                                                    lastName
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                `;
-                
-                try {
-                    const data = await makeBoulevardRequest(query, { locationId: formattedLocationId });
-                    const cart = data.createCart.cart;
-                    this.state.cartId = cart.id;
-                    
-                    // Extract staff from cart
-                    const staffMap = new Map();
-                    cart.availableCategories.forEach(category => {
-                        category.availableItems.forEach(item => {
-                            if (item.staffVariants) {
-                                item.staffVariants.forEach(variant => {
-                                    if (variant.staff && !staffMap.has(variant.staff.id)) {
-                                        staffMap.set(variant.staff.id, variant.staff);
-                                    }
-                                });
-                            }
-                        });
-                    });
-                    
-                    this.state.availableStaff = Array.from(staffMap.values());
-                    console.log('Cart created:', this.state.cartId);
-                } catch (error) {
-                    console.error('Cart creation failed:', error);
-                    // Continue without cart for demo purposes
-                }
-            },
-
-            // Form submission
-            init() {
-                document.getElementById('patient-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    this.submitBooking();
-                });
-            },
-
-            async submitBooking() {
-                const formData = new FormData(document.getElementById('patient-form'));
-                const patientInfo = Object.fromEntries(formData);
-                
-                console.log('Booking submission:', {
-                    flow: this.state.currentFlow,
-                    location: this.state.selectedLocation,
-                    category: this.state.selectedCategory,
-                    service: this.state.selectedService,
-                    staff: this.state.selectedStaff,
-                    dateTime: this.state.selectedDateTime,
-                    patientInfo: patientInfo
-                });
-
-                // Simulate booking process
-                setTimeout(() => {
-                    this.showSection('booking-success');
-                }, 1000);
-            }
-        };
-
-        // Initialize app
-        bookingApp.init();
-    </script>
+      }`;
+    return gql(Q,{staff:state.staffId,date:ds})
+      .then(r=>{
+        state.staffAvailabilityData[ds] = 
+          r.data.staffAvailability.map(x=>({
+            id: x.id,
+            startTime: x.startTime,
+            locationName: x.location.name
+          }));
+      }).catch(_=>{
+        state.staffAvailabilityData[ds]=[];
+      });
+  }
+  function flowC_showTimesForDate(date){
+    const ds=date.toISOString().split('T')[0];
+    const slots=state.staffAvailabilityData[ds]||[];
+    const tsWr = document.querySelector('.staff-times');
+    tsWr.innerHTML = '';
+    if(!slots.length){
+      tsWr.innerHTML='<em>No slots</em>'; return;
+    }
+    const g=document.createElement('div'); g.className='grid';
+    slots.forEach(s=>{
+      const tLabel = new Date(s.startTime)
+        .toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+      g.appendChild(makeButton(
+        tLabel + ' @ ' + s.locationName,
+        ()=>{
+          state.timeSlot={ id:s.id, label:tLabel, location:s.locationName };
+          addMessage('user',tLabel+' @ '+s.locationName, flow_completeBooking);
+        }
+      ));
+    });
+    tsWr.appendChild(g);
+  }
+
+  // —— Shared Booking Steps ——
+  function flow_reserveTime(){
+    const Q = `
+      mutation($cart:ID!,$time:ID!){ reserveCartBookableItems(input:{
+        id:$cart, bookableTimeId:$time }){ cart{id} } }`;
+    gql(Q,{cart:state.cartId,time:state.timeSlot.id})
+      .then(()=>flow_collectInfo())
+      .catch(()=>addMessage('system','❌ Time reservation failed.'));
+  }
+  function flow_collectInfo(){
+    addMessage('system','Enter contact info:');
+    const c=document.createElement('div');
+    c.innerHTML=`
+      <input id="fn" class="input" placeholder="First Name">
+      <input id="ln" class="input" placeholder="Last Name">
+      <input id="em" class="input" placeholder="Email">
+      <input id="ph" class="input" placeholder="Phone">
+      <button class="primary">Complete Booking</button>`;
+    c.querySelector('button').onclick=flow_updateClient;
+    addMessage('system',c.outerHTML);
+  }
+  function flow_updateClient(){
+    state.client = {
+      firstName:document.getElementById('fn').value,
+      lastName: document.getElementById('ln').value,
+      email:    document.getElementById('em').value,
+      phone:    document.getElementById('ph').value
+    };
+    const Q = `
+      mutation($cart:ID!,$email:Email!,$fn:String!,$ln:String!,$ph:PhoneNumber!){
+        updateCart(input:{
+          id:$cart,
+          clientInformation:{
+            email:$email, firstName:$fn, lastName:$ln, phoneNumber:$ph
+          }
+        }){ cart{id} } }`;
+    gql(Q,{
+      cart: state.cartId,
+      email: state.client.email,
+      fn:    state.client.firstName,
+      ln:    state.client.lastName,
+      ph:    state.client.phone
+    }).finally(flow_completeBooking);
+  }
+  function flow_completeBooking(){
+    const Q = `
+      mutation($input:BookingCompleteInput!){
+        bookingComplete(input:$input){
+          booking{id}
+        }
+      }`;
+    gql(Q,{ input:{ cartId:state.cartId } })
+      .then(res=>{
+        addMessage('system',
+          `<strong>✅ Booking Confirmed!</strong><br>
+           Provider: ${state.staffName||'Any'}<br>
+           ${state.serviceName||''}<br>
+           ${state.timeSlot.label}<br>
+           ${state.client.firstName}, check your email shortly.`
+        );
+      })
+      .catch(()=>addMessage('system','❌ Booking failed.'));
+  }
+
+  // —— Initialize ——
+  document.addEventListener('DOMContentLoaded', start);
+  </script>
 </body>
 </html>
