@@ -1,2639 +1,1285 @@
-<!DOCTYPE html>
+can ou please correct this code make it functional I want to be able to see a booking component with a calendar as part of the steps showing available slots and also be able to see staff schedules on a calendar and I want the API to show the images of staff too <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Appointment | Get Plump</title>
-  
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #f5f5f7;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    
-    .booking-widget {
-      width: 100%;
-      max-width: 800px;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      height: 80vh;
-      min-height: 600px;
-    }
-    
-    .chat-header {
-      background: #ffffff;
-      padding: 20px 30px;
-      border-bottom: 1px solid #e5e5e7;
-      text-align: center;
-    }
-    
-    .chat-title {
-      color: #1d1d1f;
-      font-size: 1.3rem;
-      font-weight: 600;
-      margin-bottom: 5px;
-    }
-    
-    .chat-subtitle {
-      color: #86868b;
-      font-size: 0.95rem;
-    }
-    
-    .messages-container {
-      flex: 1;
-      padding: 20px 30px;
-      overflow-y: auto;
-      scroll-behavior: smooth;
-      background: #fff;
-    }
-    
-    .message {
-      margin-bottom: 20px;
-      display: flex;
-      animation: slideIn 0.3s ease-out;
-      max-width: 100%;
-    }
-    
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .message.system {
-      justify-content: flex-start;
-    }
-    
-    .message.user {
-      justify-content: flex-end;
-    }
-    
-    .message-bubble {
-      max-width: 70%;
-      padding: 12px 18px;
-      border-radius: 18px;
-      font-size: 1rem;
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
-    
-    .message.system .message-bubble {
-      background: #e9e9eb;
-      color: #1d1d1f;
-      border-bottom-left-radius: 4px;
-    }
-    
-    .message.user .message-bubble {
-      background: #007AFF;
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-    
-    .typing-indicator {
-      display: flex;
-      align-items: center;
-      padding: 12px 18px;
-      background: #e9e9eb;
-      border-radius: 18px;
-      border-bottom-left-radius: 4px;
-      max-width: 80px;
-    }
-    
-    .typing-dots {
-      display: flex;
-      gap: 4px;
-    }
-    
-    .dot {
-      width: 8px;
-      height: 8px;
-      background: #86868b;
-      border-radius: 50%;
-      animation: typing 1.4s infinite;
-    }
-    
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
-    
-    @keyframes typing {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-      30% { transform: translateY(-6px); opacity: 1; }
-    }
-    
-    /* Treatment Type Selection */
-    .treatment-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    .treatment-button {
-      background: #fff;
-      border: 2px solid #e5e5e7;
-      color: #1d1d1f;
-      padding: 20px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-    
-    .treatment-button:hover {
-      border-color: #007AFF;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
-    }
-    
-    .treatment-title {
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 1.1rem;
-    }
-    
-    .treatment-desc {
-      font-size: 0.9rem;
-      color: #86868b;
-      line-height: 1.3;
-    }
-    
-    /* Improved Injector Display - Vertical List */
-    .injector-container {
-      margin-top: 15px;
-    }
-    
-    .injector-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 300px;
-      overflow-y: auto;
-      padding-right: 5px;
-    }
-    
-    .injector-list::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .injector-list::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 3px;
-    }
-    
-    .injector-list::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 3px;
-    }
-    
-    .injector-list::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-    
-    .injector-item {
-      background: #fff;
-      border: 2px solid #e5e5e7;
-      border-radius: 25px;
-      padding: 8px 16px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-height: 50px;
-    }
-    
-    .injector-item:hover {
-      border-color: #007AFF;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
-    }
-    
-    .injector-item.first-available {
-      background: #007AFF;
-      color: #fff;
-      border-color: #007AFF;
-    }
-    
-    .injector-item.first-available:hover {
-      background: #0056d6;
-      border-color: #0056d6;
-    }
-    
-    .injector-photo {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      background: #e5e5e7;
-      background-size: cover;
-      background-position: center;
-      flex-shrink: 0;
-    }
-    
-    .injector-name {
-      font-weight: 600;
-      font-size: 0.95rem;
-      flex: 1;
-      text-align: left;
-    }
-    
-    .injector-item.first-available .injector-name {
-      color: #fff;
-    }
-    
-    /* Calendar-style Time Selection */
-    .availability-container {
-      margin-top: 15px;
-    }
-    
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      padding: 0 10px;
-    }
-    
-    .calendar-nav {
-      background: #f0f0f0;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-    }
-    
-    .calendar-nav:hover {
-      background: #e0e0e0;
-    }
-    
-    .calendar-nav:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .calendar-title {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #1d1d1f;
-    }
-    
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      margin-bottom: 15px;
-    }
-    
-    .calendar-day-header {
-      text-align: center;
-      font-size: 0.8rem;
-      color: #86868b;
-      font-weight: 500;
-      padding: 8px 4px;
-    }
-    
-    .calendar-day {
-      background: #f9f9f9;
-      border: 1px solid #e5e5e7;
-      border-radius: 8px;
-      padding: 8px 4px;
-      text-align: center;
-      font-size: 0.85rem;
-      min-height: 60px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    
-    .calendar-day:hover {
-      background: #f0f8ff;
-      border-color: #007AFF;
-    }
-    
-    .calendar-day.has-availability {
-      background: #fff;
-      border-color: #34c759;
-    }
-    
-    .calendar-day.has-availability:hover {
-      background: #f0fff4;
-      border-color: #30a752;
-    }
-    
-    .calendar-day.selected {
-      background: #007AFF;
-      color: #fff;
-      border-color: #007AFF;
-    }
-    
-    .calendar-day.disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    
-    .calendar-day.disabled:hover {
-      background: #f9f9f9;
-      border-color: #e5e5e7;
-    }
-    
-    .day-number {
-      font-weight: 500;
-      margin-bottom: 2px;
-    }
-    
-    .day-availability {
-      font-size: 0.7rem;
-      color: #34c759;
-      font-weight: 500;
-    }
-    
-    .calendar-day.selected .day-availability {
-      color: rgba(255, 255, 255, 0.8);
-    }
-    
-    .time-slots {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      padding: 10px;
-      background: #f9f9f9;
-      border-radius: 8px;
-    }
-    
-    .time-slot {
-      background: #fff;
-      border: 1px solid #e5e5e7;
-      border-radius: 6px;
-      padding: 8px;
-      text-align: center;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .time-slot:hover {
-      background: #f0f8ff;
-      border-color: #007AFF;
-    }
-    
-    /* Location Grid */
-    .location-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    .location-button {
-      background: #fff;
-      border: 2px solid #e5e5e7;
-      color: #1d1d1f;
-      padding: 15px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      font-size: 0.95rem;
-      font-weight: 500;
-    }
-    
-    .location-button:hover {
-      border-color: #007AFF;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
-    }
-    
-    /* Service Grid */
-    .service-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 15px;
-      max-height: 350px;
-      overflow-y: auto;
-    }
-    
-    .service-button {
-      background: #fff;
-      border: 2px solid #e5e5e7;
-      color: #1d1d1f;
-      padding: 18px 20px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: left;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .service-button:hover {
-      border-color: #007AFF;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
-    }
-    
-    .service-info {
-      flex: 1;
-    }
-    
-    .service-name {
-      font-weight: 600;
-      margin-bottom: 4px;
-      font-size: 1rem;
-    }
-    
-    .service-duration {
-      font-size: 0.85rem;
-      color: #86868b;
-    }
-    
-    .service-price {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #007AFF;
-    }
-    
-    /* Form Container */
-    .form-container {
-      background: #f9f9f9;
-      border-radius: 12px;
-      padding: 25px;
-      margin-top: 15px;
-    }
-    
-    .form-input {
-      width: 100%;
-      background: #fff;
-      border: 2px solid #e5e5e7;
-      border-radius: 8px;
-      padding: 12px 16px;
-      color: #1d1d1f;
-      font-size: 1rem;
-      margin-bottom: 15px;
-      transition: border-color 0.2s ease;
-    }
-    
-    .form-input::placeholder {
-      color: #86868b;
-    }
-    
-    .form-input:focus {
-      outline: none;
-      border-color: #007AFF;
-    }
-    
-    .form-input.error {
-      border-color: #ff3b30;
-    }
-    
-    .error-text {
-      color: #ff3b30;
-      font-size: 0.85rem;
-      margin-top: -10px;
-      margin-bottom: 10px;
-    }
-    
-    .form-section-title {
-      color: #1d1d1f;
-      font-weight: 600;
-      margin-bottom: 15px;
-      margin-top: 20px;
-      font-size: 1.1rem;
-    }
-    
-    .form-section-title:first-child {
-      margin-top: 0;
-    }
-    
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-    
-    /* Buttons */
-    .primary-button {
-      background: #007AFF;
-      color: #fff;
-      border: none;
-      padding: 15px 25px;
-      border-radius: 25px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 20px;
-      width: 100%;
-      font-size: 1rem;
-      transition: all 0.2s ease;
-    }
-    
-    .primary-button:hover {
-      background: #0056d6;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-    }
-    
-    .primary-button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    .secondary-button {
-      background: #34c759;
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 20px;
-      font-weight: 500;
-      cursor: pointer;
-      margin-top: 15px;
-      width: 100%;
-      font-size: 0.95rem;
-      transition: all 0.2s ease;
-    }
-    
-    .secondary-button:hover {
-      background: #30a752;
-      transform: translateY(-1px);
-    }
-    
-    .restart-button {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #fff;
-      border: 2px solid #e5e5e7;
-      color: #1d1d1f;
-      padding: 8px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
-      z-index: 1000;
-      font-weight: 500;
-    }
-    
-    .restart-button:hover {
-      border-color: #007AFF;
-      background: #f0f8ff;
-    }
-    
-    .error-message {
-      background: #ffebee;
-      border: 2px solid #ffcdd2;
-      color: #d32f2f;
-      padding: 15px 18px;
-      border-radius: 12px;
-      margin-top: 15px;
-      font-size: 0.95rem;
-    }
-    
-    .success-message {
-      background: #e8f5e8;
-      border: 2px solid #c8e6c9;
-      color: #2e7d32;
-      padding: 15px 18px;
-      border-radius: 12px;
-      margin-top: 15px;
-      font-size: 0.95rem;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Plump Booking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .debug-message {
-      background: #fff3cd;
-      border: 2px solid #ffeaa7;
-      color: #856404;
-      padding: 15px 18px;
-      border-radius: 12px;
-      margin-top: 15px;
-      font-size: 0.85rem;
-      font-family: monospace;
-      white-space: pre-wrap;
-    }
-    
-    .loading {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-    
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-      body {
-        padding: 0;
-        align-items: stretch;
-      }
-      
-      .booking-widget {
-        max-width: 100%;
-        border-radius: 0;
-        height: 100vh;
-      }
-      
-      .messages-container {
-        padding: 15px 20px;
-      }
-      
-      .chat-header {
-        padding: 15px 20px;
-      }
-      
-      .treatment-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      
-      .message-bubble {
-        max-width: 85%;
-      }
-      
-      .calendar-grid {
-        grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
-      }
-      
-      .calendar-day {
-        min-height: 50px;
-        padding: 4px 2px;
-        font-size: 0.8rem;
-      }
-      
-      .injector-list {
-        gap: 8px;
-        max-height: 250px;
-      }
-      
-      .injector-item {
-        padding: 6px 12px;
-        min-height: 45px;
-        gap: 10px;
-      }
-      
-      .injector-photo {
-        width: 30px;
-        height: 30px;
-      }
-      
-      .injector-name {
-        font-size: 0.9rem;
-      }
-    }
-  </style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f5f7;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .booking-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 480px;
+            min-height: 500px;
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .booking-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .booking-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .booking-subtitle {
+            font-size: 16px;
+            color: #86868b;
+            font-weight: 400;
+        }
+
+        .booking-section {
+            display: none;
+        }
+
+        .booking-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .pill-button {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            background: #f5f5f7;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #1d1d1f;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .pill-button:hover {
+            background: #e8e8ed;
+            transform: translateY(-1px);
+        }
+
+        .pill-button:active {
+            transform: translateY(0);
+        }
+
+        .pill-button.primary {
+            background: #007aff;
+            color: white;
+        }
+
+        .pill-button.primary:hover {
+            background: #0056cc;
+        }
+
+        .pill-button.selected {
+            background: #007aff;
+            color: white;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #007aff;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: none;
+        }
+
+        .back-button.show {
+            display: block;
+        }
+
+        .back-button:hover {
+            background: #f0f0f0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #86868b;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007aff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #f5f5f7;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-day:hover {
+            background: #e8e8ed;
+        }
+
+        .calendar-day.available {
+            background: #007aff;
+            color: white;
+        }
+
+        .calendar-day.selected {
+            background: #0056cc;
+            color: white;
+        }
+
+        .calendar-day.header {
+            background: none;
+            cursor: default;
+            font-weight: bold;
+            color: #1d1d1f;
+        }
+
+        .calendar-day.empty {
+            background: none;
+            cursor: default;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .time-slot {
+            padding: 12px 8px;
+            background: #f5f5f7;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-slot:hover {
+            background: #e8e8ed;
+        }
+
+        .time-slot.selected {
+            background: #007aff;
+            color: white;
+        }
+
+        /* Location color codes */
+        .location-west-village {
+            background: #007aff;
+            color: white;
+        }
+
+        .location-soho {
+            background: #34c759;
+            color: white;
+        }
+
+        .location-tribeca {
+            background: #ff3b30;
+            color: white;
+        }
+
+        .location-williamsburg {
+            background: #ff9500;
+            color: white;
+        }
+
+        .location-hoboken {
+            background: #af52de;
+            color: white;
+        }
+
+        .location-uptown {
+            background: #5ac8fa;
+            color: white;
+        }
+
+        .location-miami {
+            background: #ff2d55;
+            color: white;
+        }
+
+        .time-slot.location-west-village:hover,
+        .time-slot.location-soho:hover,
+        .time-slot.location-tribeca:hover,
+        .time-slot.location-williamsburg:hover,
+        .time-slot.location-hoboken:hover,
+        .time-slot.location-uptown:hover,
+        .time-slot.location-miami:hover {
+            opacity: 0.8;
+        }
+
+        .time-slot.selected {
+            background: #0056cc !important;
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .booking-container {
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                padding: 60px 20px 40px;
+            }
+
+            .booking-title {
+                font-size: 24px;
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .time-slots {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="booking-widget">
-    <div class="chat-header">
-      <div class="chat-title">Get Plump Booking</div>
-      <div class="chat-subtitle">Book your appointment</div>
+    <div class="booking-container">
+        <button class="back-button" onclick="bookingApp.goBack()">←</button>
+        
+        <div class="booking-header">
+            <h1 class="booking-title">Get Plump</h1>
+            <p class="booking-subtitle">Book your appointment</p>
+        </div>
+
+        <!-- Flow Selection -->
+        <div id="flow-selection" class="booking-section active">
+            <h2 class="section-title">How would you like to book?</h2>
+            <button class="pill-button" onclick="bookingApp.startLocationFlow()">
+                Start with Location
+            </button>
+            <button class="pill-button" onclick="bookingApp.startStaffFlow()">
+                Start with Staff Member
+            </button>
+            <button class="pill-button" onclick="bookingApp.startSchedulesFlow()">
+                View Staff Schedules
+            </button>
+        </div>
+
+        <!-- Location Selection -->
+        <div id="location-selection" class="booking-section">
+            <h2 class="section-title">Select Location</h2>
+            <div id="locations-list">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading locations...
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Selection -->
+        <div id="category-selection" class="booking-section">
+            <h2 class="section-title">Select Category</h2>
+            <div class="grid-2">
+                <button class="pill-button" onclick="bookingApp.selectCategory('skincare')">
+                    Skincare
+                </button>
+                <button class="pill-button" onclick="bookingApp.selectCategory('injectable')">
+                    Injectable
+                </button>
+            </div>
+        </div>
+
+        <!-- Services Selection -->
+        <div id="services-selection" class="booking-section">
+            <h2 class="section-title">Select Service</h2>
+            <div id="services-list"></div>
+        </div>
+
+        <!-- Staff Options -->
+        <div id="staff-options" class="booking-section">
+            <h2 class="section-title">Choose Staff</h2>
+            <button class="pill-button primary" onclick="bookingApp.selectFirstAvailable()">
+                First Available
+            </button>
+            <button class="pill-button" onclick="bookingApp.showStaffSelection()">
+                Select Staff Member
+            </button>
+        </div>
+
+        <!-- Staff Selection -->
+        <div id="staff-selection" class="booking-section">
+            <h2 class="section-title">Select Staff Member</h2>
+            <div id="staff-list">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading staff...
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar -->
+        <div id="calendar-selection" class="booking-section">
+            <h2 class="section-title">Select Date & Time</h2>
+            <div id="calendar-container">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading availability...
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Info -->
+        <div id="patient-info" class="booking-section">
+            <h2 class="section-title">Patient Information</h2>
+            <form id="patient-form">
+                <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-input" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-input" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" class="form-input" name="phone" required>
+                </div>
+                <button type="submit" class="pill-button primary">
+                    Book Appointment
+                </button>
+            </form>
+        </div>
+
+        <!-- Success -->
+        <div id="booking-success" class="booking-section">
+            <h2 class="section-title">Booking Confirmed!</h2>
+            <p style="text-align: center; color: #86868b; margin-bottom: 30px;">
+                Your appointment has been successfully booked.
+            </p>
+            <button class="pill-button" onclick="bookingApp.restart()">
+                Book Another Appointment
+            </button>
+        </div>
     </div>
-    
-    <div class="restart-button" onclick="restartChat()">Start Over</div>
-    
-    <div class="messages-container" id="messages"></div>
-  </div>
 
-  <script>
-    // Debug logging
-    console.log('Widget loading...');
-    
-    // Boulevard API Configuration - Updated with sandbox option
-    const BOULEVARD_CONFIG = {
-      businessId: 'f6a06736-1132-4365-b79a-a69c648a746a',
-      apiKey: '93ca3f15-6f0e-491d-840b-681a0fef80ed',
-      // Use sandbox for testing - uncomment next line and comment production line
-      // clientApiUrl: 'https://sandbox.joinblvd.com/api/2020-01/f6a06736-1132-4365-b79a-a69c648a746a/client',
-      clientApiUrl: 'https://dashboard.boulevard.io/api/2020-01/f6a06736-1132-4365-b79a-a69c648a746a/client'
-    };
-    
-    const LOCATIONS_DATA = {
-      'West Village': { 
-        locationId: 'ffaaff3c-d5ba-408e-ba3b-455554b77116'
-      },
-      'SoHo': { 
-        locationId: '89763e68-2454-429c-ae9c-c1b4d91e7b81'
-      },
-      'Tribeca': { 
-        locationId: '43dfb866-a872-4f01-9491-6c6584e3c3e7'
-      },
-      'Williamsburg': { 
-        locationId: '93566b17-c023-4fe1-9a84-462f143bd024'
-      },
-      'Hoboken': { 
-        locationId: 'a885e859-21ef-43c7-8a63-bb242db98de2'
-      },
-      'Uptown': { 
-        locationId: 'b146c47b-6de8-475a-8ebd-8a1d2b36546d'
-      },
-      'Miami': { 
-        locationId: '1cbb848e-138b-4142-bc3d-b9f4ea9a42db'
-      }
-    };
-    
-    // Global state
-    let conversationState = 'start';
-    let treatmentType = null;
-    let bookingFlow = null;
-    let selectedLocation = null;
-    let selectedLocationId = null;
-    let selectedInjector = null;
-    let selectedInjectorId = null;
-    let selectedService = null;
-    let selectedServiceId = null;
-    let selectedTime = null;
-    let cartId = null;
-    let availableStaff = [];
-    let availableServices = [];
-    let availableTimes = [];
-    let clientInfo = {};
-    let currentCalendarDate = new Date();
-    let calendarAvailability = {};
-    let selectedDate = null;
-    
-    // Network retry configuration
-    const RETRY_CONFIG = {
-      maxRetries: 3,
-      baseDelay: 1000,
-      maxDelay: 5000
-    };
-    
-    console.log('State initialized');
-    
-    // Utility functions
-    function validateEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
-    }
-    
-    function validatePhoneNumber(phone) {
-      const digitsOnly = phone.replace(/\D/g, '');
-      return digitsOnly.length >= 10 && digitsOnly.length <= 15;
-    }
-
-    // Enhanced error logging
-    function logError(context, error, additionalData = {}) {
-      console.error(`❌ [${context}] Error:`, {
-        message: error.message,
-        stack: error.stack,
-        response: error.response,
-        ...additionalData
-      });
-    }
-
-    // Sleep utility for retry delays
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    // Enhanced Boulevard API helper with CORS debugging and retry logic
-    async function makeBoulevardRequest(query, variables = {}, retryCount = 0) {
-      console.log(`🔥 Making Boulevard Client API request (attempt ${retryCount + 1}):`, { 
-        query: query.substring(0, 100) + '...', 
-        variables,
-        cartId: cartId || 'none',
-        endpoint: BOULEVARD_CONFIG.clientApiUrl
-      });
-      
-      try {
-        const response = await fetch(BOULEVARD_CONFIG.clientApiUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Basic ' + btoa(BOULEVARD_CONFIG.apiKey + ':'),
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            query: query,
-            variables: variables
-          })
-        });
-
-        console.log('🔥 Client API response status:', response.status);
-        console.log('🔥 CORS headers:', {
-          'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
-          'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
-          'access-control-allow-headers': response.headers.get('access-control-allow-headers')
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('🔥 Client API response data:', data);
-        
-        if (data.errors && data.errors.length > 0) {
-          console.error('🔥 Client API GraphQL errors:', data.errors);
-          throw new Error(`GraphQL Error: ${data.errors.map(e => e.message).join(', ')}`);
-        }
-        
-        return data.data;
-      } catch (error) {
-        logError('makeBoulevardRequest', error, { query, variables, retryCount });
-        
-        // Retry logic with exponential backoff
-        if (retryCount < RETRY_CONFIG.maxRetries && 
-            (error.message.includes('network') || error.message.includes('timeout') || 
-             error.message.includes('fetch') || error.message.includes('Failed to fetch'))) {
-          
-          const delay = Math.min(
-            RETRY_CONFIG.baseDelay * Math.pow(2, retryCount),
-            RETRY_CONFIG.maxDelay
-          );
-          
-          console.log(`🔄 Retrying request in ${delay}ms...`);
-          await sleep(delay);
-          return makeBoulevardRequest(query, variables, retryCount + 1);
-        }
-        
-        throw error;
-      }
-    }
-    
-    // Cart validation based on official Boulevard schema (no payment method required)
-    async function debugCartStatus() {
-      console.log('🔍 Debugging cart status before booking...');
-      
-      if (!cartId) {
-        console.error('🔍 No cartId available for debugging');
-        return null;
-      }
-      
-      // Using exact fields from Boulevard API documentation
-      const query = `
-        query GetCart($cartId: ID!) {
-          cart(id: $cartId) {
-            id
-            expiresAt
-            completedAt
-            clientInformation {
-              firstName
-              lastName
-              email
-              phoneNumber
-            }
-            selectedItems {
-              id
-              item {
-                id
-                name
-              }
-              selectedStaffVariant {
-                id
-                staff {
-                  id
-                  firstName
-                  lastName
-                }
-              }
-            }
-            startTime
-            endTime
-            startTimeId
-            errors {
-              field
-              message
-              code
-              description
-            }
-          }
-        }
-      `;
-      
-      try {
-        const data = await makeBoulevardRequest(query, { id: cartId });
-        const cart = data.cart;
-        
-        console.log('🔍 Cart debug info:', cart);
-        
-        // Validation based on official cart fields
-        const validation = {
-          hasCartId: !!cart.id,
-          hasClientInfo: !!(cart.clientInformation && cart.clientInformation.email && 
-                           cart.clientInformation.firstName && cart.clientInformation.lastName),
-          hasSelectedItems: !!(cart.selectedItems && cart.selectedItems.length > 0),
-          hasReservedTime: !!(cart.startTime && cart.endTime && cart.startTimeId),
-          hasErrors: !!(cart.errors && cart.errors.length > 0),
-          isCompleted: !!cart.completedAt,
-          expiresAt: cart.expiresAt
+    <script>
+        // Boulevard API Configuration
+        const BOULEVARD_CONFIG = {
+            businessId: 'f6a06736-1132-4365-b79a-a69c648a746a',
+            apiKey: '93ca3f15-6f0e-491d-840b-681a0fef80ed',
+            apiUrl: 'https://dashboard.boulevard.io/api/2020-01/f6a06736-1132-4365-b79a-a69c648a746a/client'
         };
-        
-        console.log('🔍 Cart validation:', validation);
-        
-        // Log specific issues
-        if (!validation.hasClientInfo) {
-          console.warn('🔍 Missing client information');
-        }
-        if (!validation.hasSelectedItems) {
-          console.warn('🔍 No items selected in cart');
-        }
-        if (!validation.hasReservedTime) {
-          console.warn('🔍 No time slot reserved');
-        }
-        if (validation.hasErrors) {
-          console.error('🔍 Cart has errors:', cart.errors);
-        }
-        
-        return { cart, validation };
-      } catch (error) {
-        logError('debugCartStatus', error);
-        return null;
-      }
-    }
 
-    // Show debug information to user
-    function showDebugMessage(title, data) {
-      const container = document.getElementById('messages');
-      const debugMessage = document.createElement('div');
-      debugMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      bubble.innerHTML = `<div class="debug-message"><strong>${title}</strong>\n${JSON.stringify(data, null, 2)}</div>`;
-      
-      debugMessage.appendChild(bubble);
-      container.appendChild(debugMessage);
-      scrollToBottom();
-    }
+        const LOCATIONS_DATA = {
+            'West Village': { 
+                locationId: 'ffaaff3c-d5ba-408e-ba3b-455554b77116'
+            },
+            'SoHo': { 
+                locationId: '89763e68-2454-429c-ae9c-c1b4d91e7b81'
+            },
+            'Tribeca': { 
+                locationId: '43dfb866-a872-4f01-9491-6c6584e3c3e7'
+            },
+            'Williamsburg': { 
+                locationId: '93566b17-c023-4fe1-9a84-462f143bd024'
+            },
+            'Hoboken': { 
+                locationId: 'a885e859-21ef-43c7-8a63-bb242db98de2'
+            },
+            'Uptown': { 
+                locationId: 'b146c47b-6de8-475a-8ebd-8a1d2b36546d'
+            },
+            'Miami': { 
+                locationId: '1cbb848e-138b-4142-bc3d-b9f4ea9a42db'
+            }
+        };
 
-    async function reserveTimeSlot() {
-      console.log('🔒 Reserving time slot:', selectedTime.id);
-      
-      const mutation = `
-        mutation ReserveCartBookableItems($cartId: ID!, $bookableTimeId: ID!) {
-          reserveCartBookableItems(input: {
-            id: $cartId,
-            bookableTimeId: $bookableTimeId
-          }) {
-            cart {
-              id
-              startTime
-              endTime
-              startTimeId
-            }
-          }
-        }
-      `;
-      
-      try {
-        const data = await makeBoulevardRequest(mutation, {
-          id: cartId,
-          bookableTimeId: selectedTime.id
-        });
-        console.log('✅ Time slot reserved successfully:', data.reserveCartBookableItems.cart);
-        addMessage('system', `Great! I've reserved your time slot. Now I need your contact information to complete your booking...`);
-        showClientInfoForm();
-      } catch (error) {
-        console.error('❌ Failed to reserve time slot:', error);
-        addMessage('system', `I'm sorry, that time slot is no longer available. Please choose a different time.`);
-        showErrorMessage('Time slot is no longer available. Please select a different time.');
-      }
-    }
-    // Complete API booking with all prerequisites validated
-    async function completeAPIBooking() {
-      console.log('✅ Starting booking completion process...');
-      
-      // Step 1: Debug cart status
-      const cartDebugInfo = await debugCartStatus();
-      if (!cartDebugInfo) {
-        throw new Error('Unable to validate cart status before booking');
-      }
-      
-      const { cart, validation } = cartDebugInfo;
-      
-      // Show debug info to user (optional - remove in production)
-      showDebugMessage('Cart Status Before Booking', validation);
-      
-      // Step 2: Validate all prerequisites per Boulevard documentation
-      if (!validation.hasCartId) {
-        throw new Error('Cart ID is missing');
-      }
-      
-      if (!validation.hasClientInfo) {
-        throw new Error('Client information is incomplete - missing required fields');
-      }
-      
-      if (!validation.hasSelectedItems) {
-        throw new Error('No services selected in cart');
-      }
-      
-      if (!validation.hasBookableTime) {
-        throw new Error('No time slot reserved in cart');
-      }
-      
-      if (!validation.hasPaymentMethod) {
-        throw new Error('No payment method added to cart - payment is required for booking');
-      }
-      
-      if (validation.hasErrors) {
-        throw new Error(`Cart has errors: ${cart.errors.map(e => e.message).join(', ')}`);
-      }
-      
-      console.log('✅ All cart prerequisites validated, proceeding with checkout...');
-      
-      // Step 3: Execute checkout with correct schema structure
-      const mutation = `
-        mutation CheckoutCart($input: CheckoutCartInput!) {
-          checkoutCart(input: $input) {
-            cart {
-              id
-              completedAt
-            }
-            appointments {
-              id
-              startTime
-              endTime
-              state
-              client {
-                firstName
-                lastName
-                email
-              }
-              location {
-                name
-              }
-              appointmentServices {
-                service {
-                  name
-                }
-              }
-              staff {
-                firstName
-                lastName
-              }
-            }
-          }
-        }
-      `;
-      
-      // Input structure per Boulevard documentation - only ID required
-      const input = { 
-        id: cartId 
-      };
-      
-      try {
-        const data = await makeBoulevardRequest(mutation, { input: input });
-        console.log('✅ Client API checkout successful:', data);
-        
-        const result = data.checkoutCart;
-        
-        if (result.appointments && result.appointments.length > 0) {
-          const appointment = result.appointments[0];
-          console.log('✅ Appointment created via Client API:', appointment.id);
-          
-          return {
-            success: true,
-            appointmentId: appointment.id,
-            appointment: appointment,
-            completedAt: result.cart.completedAt,
-            method: 'Client API checkoutCart'
-          };
-        } else {
-          throw new Error('No appointments created during checkout');
-        }
-      } catch (error) {
-        logError('completeAPIBooking', error, { cartId, validation });
-        
-        // Enhanced error handling with specific Boulevard API errors
-        if (error.message.includes('Cannot query field')) {
-          throw new Error(`GraphQL Schema Error: ${error.message} - Please check field structure`);
-        } else if (error.message.includes('payment')) {
-          throw new Error('Payment method validation failed');
-        } else if (error.message.includes('network') || error.message.includes('timeout')) {
-          throw new Error('Network connection error - please try again');
-        } else if (error.message.includes('401') || error.message.includes('403')) {
-          throw new Error('Authentication error - invalid API key or permissions');
-        } else {
-          throw new Error(`Booking checkout failed: ${error.message}`);
-        }
-      }
-    }
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM loaded, starting conversation');
-      startConversation();
-    });
-    
-    function startConversation() {
-      console.log('Starting conversation');
-      const container = document.getElementById('messages');
-      container.innerHTML = '';
-      conversationState = 'start';
-      
-      // Reset state
-      treatmentType = null;
-      bookingFlow = null;
-      selectedLocation = null;
-      selectedLocationId = null;
-      selectedInjector = null;
-      selectedInjectorId = null;
-      selectedService = null;
-      selectedServiceId = null;
-      selectedTime = null;
-      cartId = null;
-      availableStaff = [];
-      availableServices = [];
-      availableTimes = [];
-      clientInfo = {};
-      currentCalendarDate = new Date();
-      calendarAvailability = {};
-      selectedDate = null;
-      
-      addMessage('system', "Hi! Welcome to Get Plump. I'll help you book your appointment.", function() {
-        addMessage('system', "What type of treatment are you interested in?", function() {
-          showTreatmentTypeSelection();
-        });
-      });
-    }
-    
-    function addMessage(type, text, callback) {
-      const container = document.getElementById('messages');
-      
-      if (type === 'system') {
-        showTyping(function() {
-          const message = document.createElement('div');
-          message.className = 'message ' + type;
-          
-          const bubble = document.createElement('div');
-          bubble.className = 'message-bubble';
-          bubble.innerHTML = text;
-          
-          message.appendChild(bubble);
-          container.appendChild(message);
-          scrollToBottom();
-          
-          if (callback) {
-            setTimeout(callback, 500);
-          }
-        });
-      } else {
-        const message = document.createElement('div');
-        message.className = 'message ' + type;
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
-        bubble.textContent = text;
-        
-        message.appendChild(bubble);
-        container.appendChild(message);
-        scrollToBottom();
-        
-        if (callback) {
-          setTimeout(callback, 300);
-        }
-      }
-    }
-    
-    function showTyping(callback) {
-      const container = document.getElementById('messages');
-      const typingMessage = document.createElement('div');
-      typingMessage.className = 'message system';
-      typingMessage.id = 'typing-indicator';
-      
-      const typingIndicator = document.createElement('div');
-      typingIndicator.className = 'typing-indicator';
-      
-      const typingDots = document.createElement('div');
-      typingDots.className = 'typing-dots';
-      
-      for (let i = 0; i < 3; i++) {
-        const dot = document.createElement('div');
-        dot.className = 'dot';
-        typingDots.appendChild(dot);
-      }
-      
-      typingIndicator.appendChild(typingDots);
-      typingMessage.appendChild(typingIndicator);
-      container.appendChild(typingMessage);
-      scrollToBottom();
-      
-      setTimeout(function() {
-        const indicator = document.getElementById('typing-indicator');
-        if (indicator) {
-          indicator.remove();
-        }
-        callback();
-      }, 1200);
-    }
-    
-    function showTreatmentTypeSelection() {
-      console.log('Showing treatment type selection');
-      const container = document.getElementById('messages');
-      const treatmentMessage = document.createElement('div');
-      treatmentMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const grid = document.createElement('div');
-      grid.className = 'treatment-grid';
-      
-      // Injectable button
-      const injectableButton = document.createElement('button');
-      injectableButton.className = 'treatment-button';
-      injectableButton.onclick = () => selectTreatmentType('injectable');
-      
-      const injectableTitle = document.createElement('div');
-      injectableTitle.className = 'treatment-title';
-      injectableTitle.textContent = 'Injectable Treatments';
-      
-      const injectableDesc = document.createElement('div');
-      injectableDesc.className = 'treatment-desc';
-      injectableDesc.textContent = 'Botox, fillers, and other injectable services';
-      
-      injectableButton.appendChild(injectableTitle);
-      injectableButton.appendChild(injectableDesc);
-      
-      // Skin treatments button
-      const skinButton = document.createElement('button');
-      skinButton.className = 'treatment-button';
-      skinButton.onclick = () => selectTreatmentType('skin');
-      
-      const skinTitle = document.createElement('div');
-      skinTitle.className = 'treatment-title';
-      skinTitle.textContent = 'Skin Treatments';
-      
-      const skinDesc = document.createElement('div');
-      skinDesc.className = 'treatment-desc';
-      skinDesc.textContent = 'Laser, microneedling, and skincare services';
-      
-      skinButton.appendChild(skinTitle);
-      skinButton.appendChild(skinDesc);
-      
-      grid.appendChild(injectableButton);
-      grid.appendChild(skinButton);
-      
-      bubble.appendChild(grid);
-      treatmentMessage.appendChild(bubble);
-      container.appendChild(treatmentMessage);
-      scrollToBottom();
-    }
-    
-    function selectTreatmentType(type) {
-      treatmentType = type;
-      addMessage('user', type === 'injectable' ? 'Injectable Treatments' : 'Skin Treatments');
-      
-      if (type === 'injectable') {
-        addMessage('system', 'Great! For injectable treatments, would you like to book with a specific injector or choose a location first?', function() {
-          showInjectableBookingFlow();
-        });
-      } else {
-        addMessage('system', 'Perfect! Please select your preferred location:', function() {
-          showLocationSelection();
-        });
-      }
-    }
-    
-    function showInjectableBookingFlow() {
-      const container = document.getElementById('messages');
-      const flowMessage = document.createElement('div');
-      flowMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const grid = document.createElement('div');
-      grid.className = 'treatment-grid';
-      
-      // Book by injector
-      const injectorButton = document.createElement('button');
-      injectorButton.className = 'treatment-button';
-      injectorButton.onclick = () => selectBookingFlow('by-injector');
-      
-      const injectorTitle = document.createElement('div');
-      injectorTitle.className = 'treatment-title';
-      injectorTitle.textContent = 'Book by Injector';
-      
-      const injectorDesc = document.createElement('div');
-      injectorDesc.className = 'treatment-desc';
-      injectorDesc.textContent = 'Choose your preferred injector first';
-      
-      injectorButton.appendChild(injectorTitle);
-      injectorButton.appendChild(injectorDesc);
-      
-      // Book by location
-      const locationButton = document.createElement('button');
-      locationButton.className = 'treatment-button';
-      locationButton.onclick = () => selectBookingFlow('by-location');
-      
-      const locationTitle = document.createElement('div');
-      locationTitle.className = 'treatment-title';
-      locationTitle.textContent = 'Book by Location';
-      
-      const locationDesc = document.createElement('div');
-      locationDesc.className = 'treatment-desc';
-      locationDesc.textContent = 'Choose your preferred location first';
-      
-      locationButton.appendChild(locationTitle);
-      locationButton.appendChild(locationDesc);
-      
-      grid.appendChild(injectorButton);
-      grid.appendChild(locationButton);
-      
-      bubble.appendChild(grid);
-      flowMessage.appendChild(bubble);
-      container.appendChild(flowMessage);
-      scrollToBottom();
-    }
-    
-    function selectBookingFlow(flow) {
-      bookingFlow = flow;
-      addMessage('user', flow === 'by-injector' ? 'Book by Injector' : 'Book by Location');
-      
-      if (flow === 'by-injector') {
-        addMessage('system', 'Let me show you our available injectors...', function() {
-          loadInjectors();
-        });
-      } else {
-        addMessage('system', 'Please select your preferred location:', function() {
-          showLocationSelection();
-        });
-      }
-    }
-    
-    function loadInjectors() {
-      console.log('🔍 Loading injectors from Boulevard API...');
-      
-      // Show loading state
-      addMessage('system', 'Loading our team of injectors...');
-      
-      // Check all locations to get complete staff list
-      const locationEntries = Object.entries(LOCATIONS_DATA);
-      
-      console.log('🔍 Checking locations:', locationEntries.map(([name, data]) => name));
-      
-      // We'll aggregate staff from all locations and track which locations they work at
-      const allStaffPromises = locationEntries.map(([locationName, locationData]) => {
-        const locationId = locationData.locationId.indexOf('urn:blvd:Location:') === 0 ? 
-          locationData.locationId : 'urn:blvd:Location:' + locationData.locationId;
-        
-        console.log('🔍 Creating cart for location:', locationName, locationId);
-        
-        const query = `
-          mutation CreateTempCart($locationId: ID!) {
-            createCart(input: { locationId: $locationId }) {
-              cart {
-                id
-                availableCategories {
-                  name
-                  availableItems {
-                    id
-                    name
-                    ... on CartAvailableBookableItem {
-                      staffVariants {
-                        id
-                        staff {
-                          id
-                          firstName
-                          lastName
-                          nickname
-                          avatar
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `;
-        
-        return makeBoulevardRequest(query, { locationId: locationId })
-          .then(data => {
-            console.log('🔍 Response from location:', locationName, data);
-            return {
-              locationName: locationName,
-              locationId: locationId,
-              cart: data.createCart.cart
-            };
-          })
-          .catch(error => {
-            console.error('🔍 Failed to load from location:', locationName, error);
-            return {
-              locationName: locationName,
-              locationId: locationId,
-              cart: null,
-              error: error.message
-            };
-          });
-      });
-      
-      Promise.all(allStaffPromises)
-        .then(responses => {
-          console.log('🔍 All cart responses received:', responses);
-          
-          const staffMap = new Map();
-          let totalItemsChecked = 0;
-          let totalStaffVariantsFound = 0;
-          let locationsWithErrors = [];
-          
-          responses.forEach(response => {
-            if (!response || !response.cart) {
-              if (response && response.error) {
-                locationsWithErrors.push(`${response.locationName}: ${response.error}`);
-              }
-              return;
-            }
+        // Service Categories
+        const SERVICE_CATEGORIES = {
+            skincare: ['Laser', 'Peels', 'Microneedling', 'Hydrafacial'],
+            injectable: ['Botox', 'Filler', 'Lip Filler', 'Sculptra', 'BBL', 'Dissolve', 'Kybella']
+        };
+
+        // Boulevard API helper
+        function makeBoulevardRequest(query, variables = {}) {
+            console.log('🔥 Making Boulevard request:', { query: query.substring(0, 100) + '...', variables });
             
-            const { locationName, cart } = response;
-            console.log(`🔍 Processing cart for ${locationName}:`, cart);
-            
-            if (cart.availableCategories) {
-              cart.availableCategories.forEach(category => {
-                console.log(`🔍 Processing category: ${category.name}`);
-                if (category.availableItems) {
-                  category.availableItems.forEach(item => {
-                    totalItemsChecked++;
-                    console.log(`🔍 Processing item: ${item.name}`, item.staffVariants);
+            return fetch(BOULEVARD_CONFIG.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + btoa(BOULEVARD_CONFIG.apiKey + ':'),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    variables: variables
+                })
+            })
+            .then(response => {
+                console.log('🔥 Boulevard response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('🔥 Boulevard response data:', data);
+                if (data.errors && data.errors.length > 0) {
+                    console.error('🔥 Boulevard GraphQL errors:', data.errors);
+                    throw new Error(`GraphQL Error: ${data.errors[0].message}`);
+                }
+                return data.data;
+            })
+            .catch(error => {
+                console.error('🔥 Boulevard request failed:', error);
+                throw error;
+            });
+        }
+
+        // Booking App State Management
+        const bookingApp = {
+            state: {
+                currentFlow: null,
+                currentStep: 'flow-selection',
+                selectedLocation: null,
+                selectedCategory: null,
+                selectedService: null,
+                selectedStaff: null,
+                selectedDateTime: null,
+                cartId: null,
+                availableStaff: [],
+                availableServices: [],
+                history: [],
+                locationCarts: {},
+                selectedDate: null,
+                availability: {}
+            },
+
+            // Navigation
+            showSection(sectionId) {
+                document.querySelectorAll('.booking-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(sectionId).classList.add('active');
+                
+                this.state.history.push(this.state.currentStep);
+                this.state.currentStep = sectionId;
+                
+                // Show/hide back button
+                const backButton = document.querySelector('.back-button');
+                if (sectionId === 'flow-selection') {
+                    backButton.classList.remove('show');
+                } else {
+                    backButton.classList.add('show');
+                }
+            },
+
+            goBack() {
+                if (this.state.history.length > 0) {
+                    const previousStep = this.state.history.pop();
+                    this.state.currentStep = previousStep;
                     
-                    if (item.staffVariants && item.staffVariants.length > 0) {
-                      totalStaffVariantsFound += item.staffVariants.length;
-                      item.staffVariants.forEach(variant => {
-                        if (variant.staff) {
-                          console.log(`🔍 Processing staff variant:`, variant.staff);
-                          if (!staffMap.has(variant.staff.id)) {
-                            staffMap.set(variant.staff.id, {
-                              id: variant.staff.id,
-                              firstName: variant.staff.firstName,
-                              lastName: variant.staff.lastName,
-                              nickname: variant.staff.nickname,
-                              avatar: variant.staff.avatar ? { url: variant.staff.avatar } : null,
-                              role: { name: 'Provider' },
-                              locations: [locationName] // Track locations
-                            });
-                          } else {
-                            // Add this location to the staff member's locations
-                            const staff = staffMap.get(variant.staff.id);
-                            if (!staff.locations.includes(locationName)) {
-                              staff.locations.push(locationName);
+                    document.querySelectorAll('.booking-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    document.getElementById(previousStep).classList.add('active');
+                    
+                    // Hide back button on first screen
+                    if (previousStep === 'flow-selection') {
+                        document.querySelector('.back-button').classList.remove('show');
+                    }
+                }
+            },
+
+            restart() {
+                this.state = {
+                    currentFlow: null,
+                    currentStep: 'flow-selection',
+                    selectedLocation: null,
+                    selectedCategory: null,
+                    selectedService: null,
+                    selectedStaff: null,
+                    selectedDateTime: null,
+                    cartId: null,
+                    availableStaff: [],
+                    availableServices: [],
+                    history: [],
+                    locationCarts: {},
+                    selectedDate: null,
+                    availability: {}
+                };
+                this.showSection('flow-selection');
+            },
+
+            // FLOW 1: Start with Location
+            startLocationFlow() {
+                this.state.currentFlow = 'location';
+                this.showSection('location-selection');
+                this.loadLocations();
+            },
+
+            async loadLocations() {
+                try {
+                    const locationsList = document.getElementById('locations-list');
+                    locationsList.innerHTML = Object.keys(LOCATIONS_DATA).map(locationName => 
+                        `<button class="pill-button" onclick="bookingApp.selectLocation('${locationName}')">${locationName}</button>`
+                    ).join('');
+                } catch (error) {
+                    console.error('Error loading locations:', error);
+                    document.getElementById('locations-list').innerHTML = 
+                        '<p style="text-align: center; color: #ff3b30;">Unable to load locations. Please try again.</p>';
+                }
+            },
+
+            selectLocation(locationName) {
+                this.state.selectedLocation = {
+                    name: locationName,
+                    id: LOCATIONS_DATA[locationName].locationId
+                };
+                this.showSection('category-selection');
+            },
+
+            selectCategory(category) {
+                this.state.selectedCategory = category;
+                this.showSection('services-selection');
+                this.loadServices();
+            },
+
+            loadServices() {
+                const servicesList = document.getElementById('services-list');
+                const services = SERVICE_CATEGORIES[this.state.selectedCategory];
+                
+                servicesList.innerHTML = services.map(service => 
+                    `<button class="pill-button" onclick="bookingApp.selectService('${service}')">${service}</button>`
+                ).join('');
+            },
+
+            selectService(service) {
+                this.state.selectedService = service;
+                if (this.state.currentFlow === 'staff') {
+                    this.showSection('calendar-selection');
+                    this.loadStaffAvailability();
+                } else {
+                    this.showSection('staff-options');
+                }
+            },
+
+            selectFirstAvailable() {
+                this.state.selectedStaff = 'first-available';
+                this.showSection('patient-info');
+            },
+
+            showStaffSelection() {
+                this.showSection('staff-selection');
+                this.loadLocationStaff();
+            },
+
+            async loadLocationStaff() {
+                try {
+                    await this.createCart();
+                    
+                    const staffList = document.getElementById('staff-list');
+                    if (this.state.availableStaff.length > 0) {
+                        staffList.innerHTML = this.state.availableStaff.map(staff => 
+                            `<button class="pill-button" onclick="bookingApp.selectStaff('${staff.id}', '${staff.firstName} ${staff.lastName}')">
+                                ${staff.firstName} ${staff.lastName}
+                            </button>`
+                        ).join('');
+                    } else {
+                        // Fallback staff list
+                        staffList.innerHTML = `
+                            <button class="pill-button" onclick="bookingApp.selectStaff('staff1', 'Sarah Johnson')">
+                                Sarah Johnson
+                            </button>
+                            <button class="pill-button" onclick="bookingApp.selectStaff('staff2', 'Mike Chen')">
+                                Mike Chen
+                            </button>
+                            <button class="pill-button" onclick="bookingApp.selectStaff('staff3', 'Lisa Rodriguez')">
+                                Lisa Rodriguez
+                            </button>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error loading location staff:', error);
+                    document.getElementById('staff-list').innerHTML = 
+                        '<p style="text-align: center; color: #ff3b30;">Unable to load staff. Please try again.</p>';
+                }
+            },
+
+            selectStaff(staffId, staffName) {
+                this.state.selectedStaff = { id: staffId, name: staffName };
+                this.showSection('patient-info');
+            },
+
+            // FLOW 2: Start with Staff
+            startStaffFlow() {
+                this.state.currentFlow = 'staff';
+                this.showSection('staff-selection');
+                this.loadAllStaff();
+            },
+
+            async loadAllStaff() {
+                try {
+                    // Load staff from all locations
+                    const allStaff = await this.loadStaffFromAllLocations();
+                    
+                    const staffList = document.getElementById('staff-list');
+                    if (allStaff.length > 0) {
+                        this.state.availableStaff = allStaff;
+                        staffList.innerHTML = allStaff.map(staff => 
+                            `<button class="pill-button" onclick="bookingApp.selectStaffForCalendar('${staff.id}', '${staff.firstName} ${staff.lastName}')">
+                                ${staff.firstName} ${staff.lastName} - ${staff.locations ? staff.locations.join(', ') : 'Multiple Locations'}
+                            </button>`
+                        ).join('');
+                    } else {
+                        // Enhanced mock staff
+                        const mockStaff = [
+                            { id: 'staff1', firstName: 'Sarah', lastName: 'Johnson', locations: ['West Village', 'SoHo'] },
+                            { id: 'staff2', firstName: 'Michael', lastName: 'Chen', locations: ['Tribeca', 'Williamsburg'] },
+                            { id: 'staff3', firstName: 'Emily', lastName: 'Rodriguez', locations: ['Hoboken', 'Uptown'] },
+                            { id: 'staff4', firstName: 'David', lastName: 'Thompson', locations: ['Miami', 'West Village'] }
+                        ];
+                        
+                        staffList.innerHTML = mockStaff.map(staff => 
+                            `<button class="pill-button" onclick="bookingApp.selectStaffForCalendar('${staff.id}', '${staff.firstName} ${staff.lastName}')">
+                                ${staff.firstName} ${staff.lastName} - ${staff.locations.join(', ')}
+                            </button>`
+                        ).join('');
+                    }
+                } catch (error) {
+                    console.error('Error loading all staff:', error);
+                    document.getElementById('staff-list').innerHTML = 
+                        '<p style="text-align: center; color: #ff3b30;">Unable to load staff. Please try again.</p>';
+                }
+            },
+
+            async loadStaffFromAllLocations() {
+                const locationEntries = Object.entries(LOCATIONS_DATA);
+                const staffMap = new Map();
+                
+                for (const [locationName, locationData] of locationEntries) {
+                    try {
+                        const locationId = locationData.locationId.startsWith('urn:blvd:Location:') ? 
+                            locationData.locationId : 'urn:blvd:Location:' + locationData.locationId;
+                        
+                        const query = `
+                            mutation CreateTempCart($locationId: ID!) {
+                                createCart(input: { locationId: $locationId }) {
+                                    cart {
+                                        id
+                                        availableCategories {
+                                            availableItems {
+                                                ... on CartAvailableBookableItem {
+                                                    staffVariants {
+                                                        staff {
+                                                            id
+                                                            firstName
+                                                            lastName
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                          }
+                        `;
+                        
+                        const data = await makeBoulevardRequest(query, { locationId });
+                        const cart = data.createCart.cart;
+                        
+                        if (cart.availableCategories) {
+                            cart.availableCategories.forEach(category => {
+                                category.availableItems.forEach(item => {
+                                    if (item.staffVariants) {
+                                        item.staffVariants.forEach(variant => {
+                                            if (variant.staff) {
+                                                if (!staffMap.has(variant.staff.id)) {
+                                                    staffMap.set(variant.staff.id, {
+                                                        ...variant.staff,
+                                                        locations: [locationName]
+                                                    });
+                                                } else {
+                                                    const staff = staffMap.get(variant.staff.id);
+                                                    if (!staff.locations.includes(locationName)) {
+                                                        staff.locations.push(locationName);
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            });
                         }
-                      });
+                    } catch (error) {
+                        console.error(`Failed to load staff from ${locationName}:`, error);
                     }
-                  });
                 }
-              });
-            }
-          });
-          
-          if (locationsWithErrors.length > 0) {
-            console.log('🔍 Locations with errors:', locationsWithErrors);
-          }
-          
-          console.log(`🔍 Summary: ${totalItemsChecked} items checked across all locations, ${totalStaffVariantsFound} staff variants found`);
-          
-          const staffList = Array.from(staffMap.values());
-          console.log('🔍 Final staff list with locations:', staffList);
-          
-          if (staffList.length > 0) {
-            console.log('✅ Successfully loaded staff from Boulevard:', staffList);
-            console.log('✅ Staff and their locations:', staffList.map(s => 
-              `${s.firstName} ${s.lastName}: ${s.locations.join(', ')}`
-            ));
-            availableStaff = staffList;
-            
-            // Force refresh the injector display
-            console.log('🔄 Refreshing injector display...');
-            showInjectors();
-          } else {
-            console.log('❌ No staff found in Boulevard API, using enhanced mock data');
-            loadEnhancedMockStaff();
-          }
-        })
-        .catch(error => {
-          console.error('❌ Failed to load staff from all locations:', error);
-          console.log('❌ Falling back to enhanced mock staff data');
-          loadEnhancedMockStaff();
-        });
-    }
-    
-    function loadEnhancedMockStaff() {
-      console.log('Using enhanced mock staff data with more comprehensive team');
-      
-      const mockStaff = [
-        {
-          id: 'staff1',
-          firstName: 'Sarah',
-          lastName: 'Johnson',
-          role: { name: 'Senior Injector' },
-          avatar: null,
-          locations: ['West Village', 'SoHo']
-        },
-        {
-          id: 'staff2',
-          firstName: 'Michael',
-          lastName: 'Chen',
-          role: { name: 'Lead Aesthetician' },
-          avatar: null,
-          locations: ['Tribeca', 'Williamsburg']
-        },
-        {
-          id: 'staff3',
-          firstName: 'Emily',
-          lastName: 'Rodriguez',
-          role: { name: 'Injector' },
-          avatar: null,
-          locations: ['Hoboken', 'Uptown']
-        },
-        {
-          id: 'staff4',
-          firstName: 'David',
-          lastName: 'Thompson',
-          role: { name: 'Medical Director' },
-          avatar: null,
-          locations: ['Miami', 'West Village']
-        },
-        {
-          id: 'staff5',
-          firstName: 'Jessica',
-          lastName: 'Martinez',
-          role: { name: 'Senior Injector' },
-          avatar: null,
-          locations: ['SoHo', 'Tribeca']
-        },
-        {
-          id: 'staff6',
-          firstName: 'Alex',
-          lastName: 'Kim',
-          role: { name: 'Aesthetic Nurse' },
-          avatar: null,
-          locations: ['Williamsburg', 'Hoboken']
-        },
-        {
-          id: 'staff7',
-          firstName: 'Rachel',
-          lastName: 'Davis',
-          role: { name: 'Injector' },
-          avatar: null,
-          locations: ['Uptown', 'Miami']
-        },
-        {
-          id: 'staff8',
-          firstName: 'Marcus',
-          lastName: 'Wilson',
-          role: { name: 'Lead Injector' },
-          avatar: null,
-          locations: ['West Village', 'Tribeca', 'SoHo']
-        },
-        {
-          id: 'staff9',
-          firstName: 'Lisa',
-          lastName: 'Brown',
-          role: { name: 'Aesthetic Specialist' },
-          avatar: null,
-          locations: ['Williamsburg', 'Uptown']
-        },
-        {
-          id: 'staff10',
-          firstName: 'James',
-          lastName: 'Garcia',
-          role: { name: 'Senior Aesthetician' },
-          avatar: null,
-          locations: ['Hoboken', 'Miami']
-        }
-      ];
-      
-      availableStaff = mockStaff;
-      console.log('✅ Enhanced mock staff loaded:', mockStaff.length, 'team members');
-      showInjectors();
-    }
-    
-    function showInjectors() {
-      console.log('🎨 Showing injectors with pill layout');
-      
-      const container = document.getElementById('messages');
-      const injectorsMessage = document.createElement('div');
-      injectorsMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const injectorContainer = document.createElement('div');
-      injectorContainer.className = 'injector-container';
-      
-      const injectorList = document.createElement('div');
-      injectorList.className = 'injector-list';
-      
-      // First Available option
-      const firstAvailableItem = document.createElement('div');
-      firstAvailableItem.className = 'injector-item first-available';
-      firstAvailableItem.onclick = () => selectInjector('first-available', 'First Available');
-      
-      const firstAvailablePhoto = document.createElement('div');
-      firstAvailablePhoto.className = 'injector-photo';
-      
-      const firstAvailableName = document.createElement('div');
-      firstAvailableName.className = 'injector-name';
-      firstAvailableName.textContent = 'First Available';
-      
-      firstAvailableItem.appendChild(firstAvailablePhoto);
-      firstAvailableItem.appendChild(firstAvailableName);
-      
-      injectorList.appendChild(firstAvailableItem);
-      
-      // Individual injectors
-      availableStaff.forEach((staff, index) => {
-        console.log(`🎨 Creating pill for staff ${index + 1}:`, staff);
-        
-        const item = document.createElement('div');
-        item.className = 'injector-item';
-        item.onclick = () => selectInjector(staff.id, staff.firstName + ' ' + staff.lastName);
-        
-        const photo = document.createElement('div');
-        photo.className = 'injector-photo';
-        if (staff.avatar && staff.avatar.url) {
-          photo.style.backgroundImage = `url(${staff.avatar.url})`;
-        }
-        
-        const name = document.createElement('div');
-        name.className = 'injector-name';
-        name.textContent = staff.firstName + ' ' + staff.lastName;
-        
-        item.appendChild(photo);
-        item.appendChild(name);
-        
-        injectorList.appendChild(item);
-      });
-      
-      injectorContainer.appendChild(injectorList);
-      bubble.appendChild(injectorContainer);
-      
-      const smsButton = document.createElement('button');
-      smsButton.className = 'secondary-button';
-      smsButton.textContent = "Don't see your preferred injector? Contact us";
-      smsButton.onclick = () => openSMS('injector-inquiry');
-      bubble.appendChild(smsButton);
-      
-      injectorsMessage.appendChild(bubble);
-      container.appendChild(injectorsMessage);
-      scrollToBottom();
-      
-      console.log('🎨 Injector pill display complete');
-    }
-    
-    function selectInjector(injectorId, injectorName) {
-      selectedInjector = injectorName;
-      selectedInjectorId = injectorId;
-      addMessage('user', injectorName);
-      
-      addMessage('system', 'Perfect! Now please select your preferred location:', function() {
-        showLocationSelection();
-      });
-    }
-    
-    function showLocationSelection() {
-      const container = document.getElementById('messages');
-      const locationMessage = document.createElement('div');
-      locationMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const grid = document.createElement('div');
-      grid.className = 'location-grid';
-      
-      let availableLocations = Object.keys(LOCATIONS_DATA);
-      
-      // If a specific injector is selected, only show their locations
-      if (selectedInjectorId && selectedInjectorId !== 'first-available') {
-        const selectedStaff = availableStaff.find(s => s.id === selectedInjectorId);
-        if (selectedStaff && selectedStaff.locations) {
-          availableLocations = selectedStaff.locations;
-          console.log(`🎯 Filtering locations for ${selectedStaff.firstName} ${selectedStaff.lastName}:`, availableLocations);
-        }
-      }
-      
-      console.log('🏢 Showing locations:', availableLocations);
-      
-      availableLocations.forEach(locationName => {
-        const button = document.createElement('button');
-        button.className = 'location-button';
-        button.textContent = locationName;
-        button.onclick = () => selectLocation(locationName);
-        grid.appendChild(button);
-      });
-      
-      bubble.appendChild(grid);
-      locationMessage.appendChild(bubble);
-      container.appendChild(locationMessage);
-      scrollToBottom();
-    }
-    
-    function selectLocation(location) {
-      selectedLocation = location;
-      selectedLocationId = LOCATIONS_DATA[location].locationId;
-      addMessage('user', location);
-      
-      addMessage('system', `Perfect! Creating your booking session for ${location}...`);
-      createCart();
-    }
-    
-    async function createCart() {
-      const formattedLocationId = selectedLocationId.indexOf('urn:blvd:Location:') === 0 ? 
-        selectedLocationId : 'urn:blvd:Location:' + selectedLocationId;
-      
-      const query = `
-        mutation CreateCart($locationId: ID!) {
-          createCart(input: { locationId: $locationId }) {
-            cart {
-              id
-              expiresAt
-              availableCategories {
-                name
-                availableItems {
-                  id
-                  name
-                  description
-                  ... on CartAvailableBookableItem {
-                    listPrice
-                    listDuration
-                    staffVariants {
-                      id
-                      price
-                      duration
-                      staff {
-                        id
-                        firstName
-                        lastName
-                      }
+                
+                return Array.from(staffMap.values());
+            },
+
+            selectStaffForCalendar(staffId, staffName) {
+                this.state.selectedStaff = { id: staffId, name: staffName };
+                this.showSection('category-selection');
+            },
+
+            async loadStaffAvailability() {
+                const calendarContainer = document.getElementById('calendar-container');
+                calendarContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading availability...</div>';
+
+                try {
+                    const staff = this.state.availableStaff.find(s => s.id === this.state.selectedStaff.id);
+                    if (!staff) throw new Error('Staff not found');
+                    const locations = staff.locations;
+                    if (locations.length === 0) {
+                        calendarContainer.innerHTML = '<p>No locations for this staff.</p>';
+                        return;
                     }
-                  }
+
+                    const today = new Date(2025, 6, 23); // 0-based month, July is 6
+                    const bookableDays = new Set();
+                    this.state.locationCarts = {};
+
+                    const locationPromises = locations.map(async (locationName) => {
+                        const locationId = LOCATIONS_DATA[locationName].locationId;
+                        const formattedLocationId = locationId.startsWith('urn:blvd:Location:') ? locationId : 'urn:blvd:Location:' + locationId;
+
+                        const createQuery = `
+                            mutation CreateCart($locationId: ID!) {
+                                createCart(input: { locationId: $locationId }) {
+                                    cart {
+                                        id
+                                        availableCategories {
+                                            availableItems {
+                                                id
+                                                name
+                                                ... on CartAvailableBookableItem {
+                                                    staffVariants {
+                                                        id
+                                                        staff {
+                                                            id
+                                                            firstName
+                                                            lastName
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        `;
+
+                        const data = await makeBoulevardRequest(createQuery, { locationId: formattedLocationId });
+                        const cart = data.createCart.cart;
+                        const cartId = cart.id;
+                        this.state.locationCarts[locationName] = cartId;
+
+                        let item = null;
+                        for (const category of cart.availableCategories) {
+                            item = category.availableItems.find(i => i.name === this.state.selectedService);
+                            if (item) break;
+                        }
+                        if (!item) return;
+
+                        const variant = item.staffVariants.find(v => v.staff.id === this.state.selectedStaff.id);
+                        if (!variant) return;
+
+                        const addInput = {
+                            cartId,
+                            availableItemId: item.id,
+                            availableItemVariantId: variant.id,
+                            quantity: 1
+                        };
+
+                        const addQuery = `
+                            mutation AddCartItem($input: AddCartItemInput!) {
+                                addCartItem(input: $input) {
+                                    cart {
+                                        id
+                                    }
+                                }
+                            }
+                        `;
+
+                        await makeBoulevardRequest(addQuery, { input: addInput });
+
+                        const startDate = new Date(today.getYear(), today.getMonth(), today.getDate() + 1);
+                        const dayPromises = [];
+                        for (let i = 0; i < 30; i++) {
+                            const currentDate = new Date(startDate);
+                            currentDate.setDate(currentDate.getDate() + i);
+                            const searchDate = currentDate.toISOString().split('T')[0];
+                            dayPromises.push(async () => {
+                                const slotsQuery = `
+                                    query GetCartBookableTimes($id: ID!, $searchDate: Date!) {
+                                        cartBookableTimes(id: $id, searchDate: $searchDate, tz: "America/New_York") {
+                                            id
+                                            startTime
+                                        }
+                                    }
+                                `;
+                                const slotsData = await makeBoulevardRequest(slotsQuery, { id: cartId, searchDate });
+                                const times = slotsData.cartBookableTimes || [];
+                                if (times.length > 0) {
+                                    bookableDays.add(searchDate);
+                                }
+                            }());
+                        }
+                        await Promise.all(dayPromises);
+                    });
+                    await Promise.all(locationPromises);
+
+                    // Build calendar for next 30 days
+                    const startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() + 1);
+                    const dates = [];
+                    for (let i = 0; i < 30; i++) {
+                        const d = new Date(startDate);
+                        d.setDate(d.getDate() + i);
+                        dates.push(d);
+                    }
+
+                    const firstDayWeek = dates[0].getDay();
+                    const daysWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                    let html = '<div class="calendar-grid">';
+                    daysWeek.forEach(day => {
+                        html += `<div class="calendar-day header">${day}</div>`;
+                    });
+
+                    for (let i = 0; i < firstDayWeek; i++) {
+                        html += '<div class="calendar-day empty"></div>';
+                    }
+
+                    dates.forEach(d => {
+                        const dateStr = d.toISOString().split('T')[0];
+                        const isAvailable = bookableDays.has(dateStr);
+                        const className = isAvailable ? 'calendar-day available' : 'calendar-day';
+                        const onclick = isAvailable ? `onclick="bookingApp.selectDate('${dateStr}')"` : '';
+                        html += `<div class="${className}" ${onclick}>${d.getDate()}</div>`;
+                    });
+
+                    const remaining = (7 - ((firstDayWeek + 30) % 7)) % 7;
+                    for (let i = 0; i < remaining; i++) {
+                        html += '<div class="calendar-day empty"></div>';
+                    }
+
+                    html += '</div><div class="time-slots" id="time-slots"></div>';
+                    calendarContainer.innerHTML = html;
+
+                } catch (error) {
+                    console.error('Error loading staff availability:', error);
+                    calendarContainer.innerHTML = '<p style="text-align: center; color: #ff3b30;">Unable to load calendar. Please try again.</p>';
                 }
-              }
+            },
+
+            selectDate(date) {
+                document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('selected'));
+                event.target.classList.add('selected');
+                this.state.selectedDate = date;
+                this.loadTimeSlots(date);
+            },
+
+            async loadTimeSlots(date) {
+                const timeSlotsContainer = document.getElementById('time-slots');
+                timeSlotsContainer.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading times...</div>';
+
+                try {
+                    let allSlots = [];
+
+                    const promises = Object.entries(this.state.locationCarts).map(async ([locationName, cartId]) => {
+                        const searchDate = date;
+                        const slotsQuery = `
+                            query GetCartBookableTimes($id: ID!, $searchDate: Date!) {
+                                cartBookableTimes(id: $id, searchDate: $searchDate, tz: "America/New_York") {
+                                    id
+                                    startTime
+                                }
+                            }
+                        `;
+                        const slotsData = await makeBoulevardRequest(slotsQuery, { id: cartId, searchDate });
+                        const times = slotsData.cartBookableTimes || [];
+                        times.forEach(t => {
+                            allSlots.push({
+                                startAt: t.startTime,
+                                location: locationName,
+                                cartId: cartId
+                            });
+                        });
+                    });
+
+                    await Promise.all(promises);
+
+                    allSlots.sort((a, b) => a.startAt.localeCompare(b.startAt));
+
+                    let html = '';
+                    allSlots.forEach(slot => {
+                        const time = new Date(slot.startAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const slug = slot.location.toLowerCase().replace(/ /g, '-');
+                        html += `<button class="time-slot location-${slug}" onclick="bookingApp.selectTime('${slot.startAt}', '${slot.location}', '${slot.cartId}')">${time}</button>`;
+                    });
+
+                    timeSlotsContainer.innerHTML = html;
+                } catch (error) {
+                    console.error('Error loading time slots:', error);
+                    timeSlotsContainer.innerHTML = '<p style="text-align: center; color: #ff3b30;">Unable to load times. Please try again.</p>';
+                }
+            },
+
+            selectTime(startAt, location, cartId) {
+                document.querySelectorAll('.time-slot').forEach(slot => slot.classList.remove('selected'));
+                event.target.classList.add('selected');
+                this.state.selectedDateTime = { startAt, location, cartId };
+                this.showSection('patient-info');
+            },
+
+            // New Schedules Flow
+            startSchedulesFlow() {
+                this.state.currentFlow = 'schedules';
+                this.state.selectedLocation = { name: 'West Village', id: 'ffaaff3c-d5ba-408e-ba3b-455554b77116' };
+                this.showSection('calendar-selection');
+                this.loadSchedules();
+            },
+
+            async loadSchedules() {
+                const container = document.getElementById('calendar-container');
+                container.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading schedules...</div>';
+
+                try {
+                    const formattedLocationId = 'urn:blvd:Location:' + this.state.selectedLocation.id;
+
+                    const createQuery = `
+                        mutation ($locationId: ID!) {
+                            createCart(input: { locationId: $locationId }) {
+                                cart {
+                                    id
+                                    availableCategories {
+                                        availableItems {
+                                            id
+                                            name
+                                            __typename
+                                            ... on CartAvailableBookableItem {
+                                                staffVariants {
+                                                    id
+                                                    staff {
+                                                        id
+                                                        firstName
+                                                        lastName
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    `;
+                    const createData = await makeBoulevardRequest(createQuery, { locationId: formattedLocationId });
+                    this.state.cartId = createData.createCart.cart.id;
+
+                    let availableItemId = null;
+                    let availableItemVariantId = null;
+                    for (const category of createData.createCart.cart.availableCategories) {
+                        for (const item of category.availableItems) {
+                            if (item.__typename === 'CartAvailableBookableItem' && item.staffVariants.length > 0) {
+                                availableItemId = item.id;
+                                availableItemVariantId = item.staffVariants[0].id;
+                                break;
+                            }
+                        }
+                        if (availableItemId) break;
+                    }
+
+                    if (!availableItemId) throw new Error('No bookable items found');
+
+                    const addQuery = `
+                        mutation ($input: AddCartItemInput!) {
+                            addCartItem(input: $input) {
+                                cart { id }
+                            }
+                        }
+                    `;
+                    const addInput = {
+                        cartId: this.state.cartId,
+                        availableItemId,
+                        availableItemVariantId,
+                        quantity: 1
+                    };
+                    await makeBoulevardRequest(addQuery, { input: addInput });
+
+                    const today = new Date(2025, 6, 23);
+                    const startDate = new Date(today);
+                    startDate.setDate(startDate.getDate() + 1);
+                    this.state.availability = {};
+
+                    const dayPromises = [];
+                    for (let i = 0; i < 30; i++) {
+                        const currentDate = new Date(startDate);
+                        currentDate.setDate(currentDate.getDate() + i);
+                        const searchDate = currentDate.toISOString().split('T')[0];
+                        dayPromises.push(async () => {
+                            const timesQuery = `
+                                query ($cartId: ID!, $searchDate: Date!) {
+                                    cartBookableTimes(id: $cartId, searchDate: $searchDate, tz: "America/New_York") {
+                                        id
+                                        startTime
+                                    }
+                                }
+                            `;
+                            const timesData = await makeBoulevardRequest(timesQuery, { cartId: this.state.cartId, searchDate });
+                            const times = timesData.cartBookableTimes || [];
+                            if (times.length > 0) {
+                                this.state.availability[searchDate] = times.map(t => t.startTime).sort();
+                            }
+                        }());
+                    }
+                    await Promise.all(dayPromises);
+
+                    const dates = [];
+                    for (let i = 0; i < 30; i++) {
+                        const d = new Date(startDate);
+                        d.setDate(d.getDate() + i);
+                        dates.push(d);
+                    }
+
+                    const firstDayWeek = dates[0].getDay();
+                    const daysWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                    let html = '<div class="calendar-grid">';
+                    daysWeek.forEach(day => {
+                        html += `<div class="calendar-day header">${day}</div>`;
+                    });
+
+                    for (let i = 0; i < firstDayWeek; i++) {
+                        html += '<div class="calendar-day empty"></div>';
+                    }
+
+                    dates.forEach(d => {
+                        const dateStr = d.toISOString().split('T')[0];
+                        const isAvailable = !!this.state.availability[dateStr];
+                        const availClass = isAvailable ? 'available' : '';
+                        const onclick = isAvailable ? `onclick="bookingApp.selectDate('${dateStr}')"` : '';
+                        html += `<div class="calendar-day ${availClass}" ${onclick}>${d.getDate()}</div>`;
+                    });
+
+                    const remaining = (7 - ((firstDayWeek + 30) % 7)) % 7;
+                    for (let i = 0; i < remaining; i++) {
+                        html += '<div class="calendar-day empty"></div>';
+                    }
+
+                    html += '</div><div class="time-slots" id="time-slots"></div>';
+                    container.innerHTML = html;
+
+                } catch (error) {
+                    console.error(error);
+                    container.innerHTML = '<p style="text-align: center; color: #ff3b30;">Error loading schedules. Please try again.</p>';
+                }
+            },
+
+            showTimes(dateStr) {
+                const times = this.state.availability[dateStr] || [];
+                let html = '';
+                times.forEach(t => {
+                    const timeDate = new Date(t);
+                    const timeStr = timeDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    html += `<button class="time-slot">${timeStr}</button>`;
+                });
+                document.getElementById('time-slots').innerHTML = html;
+            },
+
+            // Cart Creation
+            async createCart() {
+                if (this.state.cartId) return; // Cart already exists
+                
+                const formattedLocationId = this.state.selectedLocation.id.startsWith('urn:blvd:Location:') ? 
+                    this.state.selectedLocation.id : 'urn:blvd:Location:' + this.state.selectedLocation.id;
+                
+                const query = `
+                    mutation CreateCart($locationId: ID!) {
+                        createCart(input: { locationId: $locationId }) {
+                            cart {
+                                id
+                                availableCategories {
+                                    availableItems {
+                                        id
+                                        name
+                                        ... on CartAvailableBookableItem {
+                                            staffVariants {
+                                                id
+                                                staff {
+                                                    id
+                                                    firstName
+                                                    lastName
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                `;
+                
+                try {
+                    const data = await makeBoulevardRequest(query, { locationId: formattedLocationId });
+                    const cart = data.createCart.cart;
+                    this.state.cartId = cart.id;
+                    
+                    // Extract staff from cart
+                    const staffMap = new Map();
+                    cart.availableCategories.forEach(category => {
+                        category.availableItems.forEach(item => {
+                            if (item.staffVariants) {
+                                item.staffVariants.forEach(variant => {
+                                    if (variant.staff && !staffMap.has(variant.staff.id)) {
+                                        staffMap.set(variant.staff.id, variant.staff);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                    
+                    this.state.availableStaff = Array.from(staffMap.values());
+                    console.log('Cart created:', this.state.cartId);
+                } catch (error) {
+                    console.error('Cart creation failed:', error);
+                    // Continue without cart for demo purposes
+                }
+            },
+
+            // Form submission
+            init() {
+                document.getElementById('patient-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.submitBooking();
+                });
+            },
+
+            async submitBooking() {
+                const formData = new FormData(document.getElementById('patient-form'));
+                const patientInfo = Object.fromEntries(formData);
+                
+                console.log('Booking submission:', {
+                    flow: this.state.currentFlow,
+                    location: this.state.selectedLocation,
+                    category: this.state.selectedCategory,
+                    service: this.state.selectedService,
+                    staff: this.state.selectedStaff,
+                    dateTime: this.state.selectedDateTime,
+                    patientInfo: patientInfo
+                });
+
+                // Simulate booking process
+                setTimeout(() => {
+                    this.showSection('booking-success');
+                }, 1000);
             }
-          }
-        }
-      `;
-      
-      try {
-        const data = await makeBoulevardRequest(query, { locationId: formattedLocationId });
-        const cart = data.createCart.cart;
-        cartId = cart.id;
-        console.log('Cart created:', cartId);
-        
-        loadServices(cart);
-      } catch (error) {
-        console.error('Cart creation failed:', error.message);
-        showErrorFallback('Unable to create booking session. Please try again or contact us.');
-      }
-    }
-    
-    function loadServices(cart) {
-      const categories = cart.availableCategories || [];
-      const services = [];
-      
-      for (const category of categories) {
-        let categoryItems = category.availableItems || [];
-        
-        if (treatmentType === 'injectable') {
-          categoryItems = categoryItems.filter(item => 
-            item.name.toLowerCase().includes('botox') ||
-            item.name.toLowerCase().includes('filler') ||
-            item.name.toLowerCase().includes('inject') ||
-            item.name.toLowerCase().includes('dysport') ||
-            category.name.toLowerCase().includes('inject')
-          );
-        } else if (treatmentType === 'skin') {
-          categoryItems = categoryItems.filter(item => 
-            item.name.toLowerCase().includes('laser') ||
-            item.name.toLowerCase().includes('microneedling') ||
-            item.name.toLowerCase().includes('facial') ||
-            item.name.toLowerCase().includes('peel') ||
-            category.name.toLowerCase().includes('skin')
-          );
-        }
-        
-        for (const item of categoryItems) {
-          // Get staff variants for this service
-          let staffVariants = item.staffVariants || [];
-          
-          // If we have a specific injector selected, filter to only their variants
-          if (selectedInjectorId && selectedInjectorId !== 'first-available') {
-            staffVariants = staffVariants.filter(variant => 
-              variant.staff && variant.staff.id === selectedInjectorId
-            );
-          }
-          
-          services.push({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            price: item.listPrice,
-            duration: item.listDuration,
-            category: category.name,
-            staffVariants: staffVariants
-          });
-        }
-      }
-      
-      if (services.length > 0) {
-        availableServices = services;
-        showServices();
-      } else {
-        showServiceFallback();
-      }
-    }
-    
-    function showServices() {
-      const treatmentLabel = treatmentType === 'injectable' ? 'injectable treatments' : 'skin treatments';
-      addMessage('system', `Here are the available ${treatmentLabel} at ${selectedLocation}:`, function() {
-        const container = document.getElementById('messages');
-        const serviceMessage = document.createElement('div');
-        serviceMessage.className = 'message system';
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
-        
-        const grid = document.createElement('div');
-        grid.className = 'service-grid';
-        
-        for (const service of availableServices.slice(0, 10)) {
-          const button = document.createElement('button');
-          button.className = 'service-button';
-          button.onclick = () => selectService(service.id, service.name);
-          
-          const serviceInfo = document.createElement('div');
-          serviceInfo.className = 'service-info';
-          
-          const nameDiv = document.createElement('div');
-          nameDiv.className = 'service-name';
-          nameDiv.textContent = service.name;
-          
-          const durationDiv = document.createElement('div');
-          durationDiv.className = 'service-duration';
-          durationDiv.textContent = service.duration ? `${service.duration} minutes` : '';
-          
-          serviceInfo.appendChild(nameDiv);
-          serviceInfo.appendChild(durationDiv);
-          
-          const priceDiv = document.createElement('div');
-          priceDiv.className = 'service-price';
-          priceDiv.textContent = service.price ? `$${Math.round(service.price / 100)}` : 'Contact for pricing';
-          
-          button.appendChild(serviceInfo);
-          button.appendChild(priceDiv);
-          grid.appendChild(button);
-        }
-        
-        bubble.appendChild(grid);
-        
-        const smsButton = document.createElement('button');
-        smsButton.className = 'secondary-button';
-        smsButton.textContent = "Don't see what you're looking for? Contact us";
-        smsButton.onclick = () => openSMS('service-inquiry');
-        bubble.appendChild(smsButton);
-        
-        serviceMessage.appendChild(bubble);
-        container.appendChild(serviceMessage);
-        scrollToBottom();
-      });
-    }
-    
-    function selectService(serviceId, serviceName) {
-      selectedService = serviceName;
-      selectedServiceId = serviceId;
-      addMessage('user', serviceName);
-      
-      addMessage('system', `Great! I've added ${serviceName} to your booking. Now let me find available appointment times...`);
-      addServiceToCart();
-    }
-    
-    async function addServiceToCart() {
-      const mutation = `
-        mutation AddCartItem($cartId: ID!, $itemId: ID!, $itemStaffVariantId: ID) {
-          addCartSelectedBookableItem(input: {
-            id: $cartId,
-            itemId: $itemId,
-            itemStaffVariantId: $itemStaffVariantId
-          }) {
-            cart {
-              id
-              selectedItems {
-                id
-              }
-            }
-          }
-        }
-      `;
-      
-      const variables = { 
-        cartId: cartId, 
-        itemId: selectedServiceId 
-      };
-      
-      // Add staff variant if we have a specific injector selected
-      if (selectedInjectorId && selectedInjectorId !== 'first-available') {
-        console.log('🎯 Looking for staff variant for injector:', selectedInjectorId);
-        
-        // Find the staff variant for the selected injector from the selected service
-        const selectedServiceData = availableServices.find(s => s.id === selectedServiceId);
-        console.log('🎯 Selected service data:', selectedServiceData);
-        
-        if (selectedServiceData && selectedServiceData.staffVariants) {
-          const staffVariant = selectedServiceData.staffVariants.find(v => 
-            v.staff && v.staff.id === selectedInjectorId
-          );
-          
-          if (staffVariant) {
-            console.log('🎯 Found staff variant:', staffVariant);
-            variables.itemStaffVariantId = staffVariant.id;
-          } else {
-            console.log('🎯 No staff variant found for injector, will use first available');
-          }
-        }
-      }
-      
-      console.log('🎯 Adding service to cart with variables:', variables);
-      
-      try {
-        const data = await makeBoulevardRequest(mutation, variables);
-        console.log('Service added to cart');
-        loadCalendarAvailability();
-      } catch (error) {
-        console.error('Failed to add service:', error.message);
-        showErrorFallback('Unable to add service. Please try again or contact us.');
-      }
-    }
-    
-    function loadCalendarAvailability() {
-      addMessage('system', 'Here are the available appointment times:', function() {
-        showCalendarView();
-        loadAvailabilityForMonth();
-      });
-    }
-    
-    function showCalendarView() {
-      const container = document.getElementById('messages');
-      const calendarMessage = document.createElement('div');
-      calendarMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const availabilityContainer = document.createElement('div');
-      availabilityContainer.className = 'availability-container';
-      availabilityContainer.id = 'availability-container';
-      
-      bubble.appendChild(availabilityContainer);
-      
-      const smsButton = document.createElement('button');
-      smsButton.className = 'secondary-button';
-      smsButton.textContent = "Don't see a good time? Contact us";
-      smsButton.onclick = () => openSMS('time-inquiry');
-      bubble.appendChild(smsButton);
-      
-      calendarMessage.appendChild(bubble);
-      container.appendChild(calendarMessage);
-      scrollToBottom();
-    }
-    
-    function renderCalendar() {
-      const container = document.getElementById('availability-container');
-      container.innerHTML = '';
-      
-      // Calendar header with navigation
-      const calendarHeader = document.createElement('div');
-      calendarHeader.className = 'calendar-header';
-      
-      const prevButton = document.createElement('button');
-      prevButton.className = 'calendar-nav';
-      prevButton.textContent = '← Previous';
-      prevButton.onclick = () => navigateMonth(-1);
-      
-      const calendarTitle = document.createElement('div');
-      calendarTitle.className = 'calendar-title';
-      calendarTitle.textContent = currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      
-      const nextButton = document.createElement('button');
-      nextButton.className = 'calendar-nav';
-      nextButton.textContent = 'Next →';
-      nextButton.onclick = () => navigateMonth(1);
-      
-      calendarHeader.appendChild(prevButton);
-      calendarHeader.appendChild(calendarTitle);
-      calendarHeader.appendChild(nextButton);
-      
-      // Calendar grid
-      const calendarGrid = document.createElement('div');
-      calendarGrid.className = 'calendar-grid';
-      
-      // Day headers
-      const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      dayHeaders.forEach(day => {
-        const dayHeader = document.createElement('div');
-        dayHeader.className = 'calendar-day-header';
-        dayHeader.textContent = day;
-        calendarGrid.appendChild(dayHeader);
-      });
-      
-      // Generate calendar days
-      const year = currentCalendarDate.getFullYear();
-      const month = currentCalendarDate.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const today = new Date();
-      
-      // Add empty cells for days before the first day of the month
-      for (let i = 0; i < firstDay.getDay(); i++) {
-        const emptyDay = document.createElement('div');
-        emptyDay.className = 'calendar-day disabled';
-        calendarGrid.appendChild(emptyDay);
-      }
-      
-      // Add days of the month
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-        
-        // Check if day is in the past
-        if (date < today) {
-          dayElement.classList.add('disabled');
-        } else {
-          dayElement.onclick = () => selectCalendarDate(date);
-          
-          // Check if this day has availability
-          if (calendarAvailability[dateStr] && calendarAvailability[dateStr].length > 0) {
-            dayElement.classList.add('has-availability');
-          }
-        }
-        
-        const dayNumber = document.createElement('div');
-        dayNumber.className = 'day-number';
-        dayNumber.textContent = day;
-        
-        const dayAvailability = document.createElement('div');
-        dayAvailability.className = 'day-availability';
-        if (calendarAvailability[dateStr] && calendarAvailability[dateStr].length > 0) {
-          dayAvailability.textContent = `${calendarAvailability[dateStr].length} slots`;
-        }
-        
-        dayElement.appendChild(dayNumber);
-        dayElement.appendChild(dayAvailability);
-        calendarGrid.appendChild(dayElement);
-      }
-      
-      container.appendChild(calendarHeader);
-      container.appendChild(calendarGrid);
-      
-      // Time slots container (initially hidden)
-      const timeSlotsContainer = document.createElement('div');
-      timeSlotsContainer.className = 'time-slots';
-      timeSlotsContainer.id = 'time-slots-container';
-      timeSlotsContainer.style.display = 'none';
-      container.appendChild(timeSlotsContainer);
-    }
-    
-    function navigateMonth(direction) {
-      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
-      renderCalendar();
-      loadAvailabilityForMonth();
-    }
-    
-    function loadAvailabilityForMonth() {
-      const year = currentCalendarDate.getFullYear();
-      const month = currentCalendarDate.getMonth();
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      
-      // Load availability for all days in the month
-      const promises = [];
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const date = new Date(year, month, day);
-        if (date >= new Date()) { // Only load for future dates
-          promises.push(loadAvailabilityForDate(date));
-        }
-      }
-      
-      Promise.all(promises).then(() => {
-        renderCalendar();
-      });
-    }
-    
-    async function loadAvailabilityForDate(date) {
-      const dateStr = date.toISOString().split('T')[0];
-      
-      const query = `
-        query GetCartBookableTimes($cartId: ID!, $searchDate: Date!) {
-          cartBookableTimes(
-            id: $cartId,
-            searchDate: $searchDate,
-            tz: "America/New_York"
-          ) {
-            id
-            startTime
-          }
-        }
-      `;
-      
-      try {
-        const data = await makeBoulevardRequest(query, { 
-          cartId: cartId, 
-          searchDate: dateStr 
-        });
-        const times = data.cartBookableTimes || [];
-        calendarAvailability[dateStr] = times;
-        return times;
-      } catch (error) {
-        console.error('Failed to load availability for', dateStr, error);
-        calendarAvailability[dateStr] = [];
-        return [];
-      }
-    }
-    
-    function selectCalendarDate(date) {
-      selectedDate = date;
-      const dateStr = date.toISOString().split('T')[0];
-      
-      // Update selected state in calendar
-      document.querySelectorAll('.calendar-day').forEach(day => {
-        day.classList.remove('selected');
-      });
-      
-      // Find and select the clicked day
-      const dayElements = document.querySelectorAll('.calendar-day');
-      dayElements.forEach(dayElement => {
-        const dayNumber = dayElement.querySelector('.day-number');
-        if (dayNumber && parseInt(dayNumber.textContent) === date.getDate()) {
-          dayElement.classList.add('selected');
-        }
-      });
-      
-      // Show time slots for this date
-      showTimeSlotsForDate(date);
-    }
-    
-    function showTimeSlotsForDate(date) {
-      const dateStr = date.toISOString().split('T')[0];
-      const times = calendarAvailability[dateStr] || [];
-      
-      const timeSlotsContainer = document.getElementById('time-slots-container');
-      timeSlotsContainer.innerHTML = '';
-      
-      if (times.length === 0) {
-        timeSlotsContainer.innerHTML = '<p style="text-align: center; color: #86868b; padding: 20px;">No available times for this date</p>';
-      } else {
-        times.forEach(time => {
-          const startTime = new Date(time.startTime);
-          const timeStr = startTime.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          });
-          
-          const timeSlot = document.createElement('div');
-          timeSlot.className = 'time-slot';
-          timeSlot.textContent = timeStr;
-          timeSlot.onclick = () => selectTime(time.id, timeStr, date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric'
-          }), time.startTime);
-          
-          timeSlotsContainer.appendChild(timeSlot);
-        });
-      }
-      
-      timeSlotsContainer.style.display = 'block';
-      scrollToBottom();
-    }
-    
-    function selectTime(timeId, timeStr, dateStr, startTime) {
-      selectedTime = { id: timeId, time: timeStr, date: dateStr, startTime: startTime };
-      addMessage('user', `${dateStr} at ${timeStr}`);
-      
-      addMessage('system', `Perfect! I've noted your preferred time: ${dateStr} at ${timeStr}. Let me reserve this time slot...`);
-      
-      // Reserve the time slot before showing the form
-      reserveTimeSlot();
-    }
-    
-    async function reserveTimeSlot() {
-      console.log('🔒 Reserving time slot:', selectedTime.id);
-      
-      const mutation = `
-        mutation ReserveCartBookableItems($cartId: ID!, $bookableTimeId: ID!) {
-          reserveCartBookableItems(input: {
-            id: $cartId,
-            bookableTimeId: $bookableTimeId
-          }) {
-            cart {
-              id
-            }
-          }
-        }
-      `;
-      
-      try {
-        const data = await makeBoulevardRequest(mutation, {
-          cartId: cartId,
-          bookableTimeId: selectedTime.id
-        });
-        console.log('✅ Time slot reserved successfully');
-        addMessage('system', `Great! I've reserved your time slot. Now I need your contact information to complete your booking...`);
-        showClientInfoForm();
-      } catch (error) {
-        console.error('❌ Failed to reserve time slot:', error);
-        addMessage('system', `I'm sorry, that time slot is no longer available. Please choose a different time.`);
-        // Could reload times here or show error
-        showErrorMessage('Time slot is no longer available. Please select a different time.');
-      }
-    }
-    
-    function showClientInfoForm() {
-      setTimeout(function() {
-        const container = document.getElementById('messages');
-        const formMessage = document.createElement('div');
-        formMessage.className = 'message system';
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble';
-        
-        const formContainer = document.createElement('div');
-        formContainer.className = 'form-container';
-        
-        const contactTitle = document.createElement('div');
-        contactTitle.className = 'form-section-title';
-        contactTitle.textContent = 'Contact Information';
-        
-        const nameRow = document.createElement('div');
-        nameRow.className = 'form-row';
-        
-        const firstNameInput = document.createElement('input');
-        firstNameInput.type = 'text';
-        firstNameInput.className = 'form-input';
-        firstNameInput.id = 'firstName';
-        firstNameInput.placeholder = 'First Name';
-        
-        const lastNameInput = document.createElement('input');
-        lastNameInput.type = 'text';
-        lastNameInput.className = 'form-input';
-        lastNameInput.id = 'lastName';
-        lastNameInput.placeholder = 'Last Name';
-        
-        nameRow.appendChild(firstNameInput);
-        nameRow.appendChild(lastNameInput);
-        
-        const emailInput = document.createElement('input');
-        emailInput.type = 'email';
-        emailInput.className = 'form-input';
-        emailInput.id = 'email';
-        emailInput.placeholder = 'Email Address';
-        
-        const phoneInput = document.createElement('input');
-        phoneInput.type = 'tel';
-        phoneInput.className = 'form-input';
-        phoneInput.id = 'phone';
-        phoneInput.placeholder = 'Phone Number';
-        
-        // Payment notice (no payment collection)
-        const paymentNotice = document.createElement('div');
-        paymentNotice.style.fontSize = '0.85rem';
-        paymentNotice.style.color = '#86868b';
-        paymentNotice.style.marginTop = '15px';
-        paymentNotice.style.padding = '10px';
-        paymentNotice.style.backgroundColor = '#f0f8ff';
-        paymentNotice.style.borderRadius = '8px';
-        paymentNotice.textContent = '💳 Payment will be collected at your appointment.';
-        
-        const submitButton = document.createElement('button');
-        submitButton.className = 'primary-button';
-        submitButton.textContent = 'Complete Booking';
-        submitButton.onclick = completeBooking;
-        
-        formContainer.appendChild(contactTitle);
-        formContainer.appendChild(nameRow);
-        formContainer.appendChild(emailInput);
-        formContainer.appendChild(phoneInput);
-        formContainer.appendChild(paymentNotice);
-        formContainer.appendChild(submitButton);
-        
-        bubble.appendChild(formContainer);
-        formMessage.appendChild(bubble);
-        container.appendChild(formMessage);
-        scrollToBottom();
-        
-        setTimeout(() => firstNameInput.focus(), 100);
-      }, 1000);
-    }
-    
-    // Simplified booking completion without payment processing
-    async function completeBooking() {
-      const firstName = document.getElementById('firstName').value.trim();
-      const lastName = document.getElementById('lastName').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      
-      // Clear previous errors
-      document.querySelectorAll('.form-input').forEach(input => input.classList.remove('error'));
-      document.querySelectorAll('.error-text').forEach(error => error.remove());
-      
-      let hasErrors = false;
-      
-      // Validate contact info only
-      if (!firstName) {
-        showFieldError('firstName', 'First name is required');
-        hasErrors = true;
-      }
-      
-      if (!lastName) {
-        showFieldError('lastName', 'Last name is required');
-        hasErrors = true;
-      }
-      
-      if (!email) {
-        showFieldError('email', 'Email is required');
-        hasErrors = true;
-      } else if (!validateEmail(email)) {
-        showFieldError('email', 'Please enter a valid email address');
-        hasErrors = true;
-      }
-      
-      if (!phone) {
-        showFieldError('phone', 'Phone number is required');
-        hasErrors = true;
-      } else if (!validatePhoneNumber(phone)) {
-        showFieldError('phone', 'Please enter a valid phone number');
-        hasErrors = true;
-      }
-      
-      if (hasErrors) return;
-      
-      clientInfo = { firstName, lastName, email, phoneNumber: phone };
-      
-      const button = document.querySelector('.primary-button');
-      const originalText = button.textContent;
-      button.textContent = 'Processing...';
-      button.disabled = true;
-      
-      addMessage('user', `${firstName} ${lastName} - ${email}`);
-      
-      try {
-        // Step 1: Update cart with client information
-        console.log('✅ Step 1: Updating cart with client info...');
-        addMessage('system', 'Updating your booking information...');
-        await updateCartWithClientInfo();
-        
-        // Step 2: Complete the booking (no payment processing)
-        console.log('✅ Step 2: Completing booking without payment...');
-        addMessage('system', 'Finalizing your appointment...');
-        const result = await completeAPIBooking();
-        
-        button.textContent = originalText;
-        button.disabled = false;
-        
-        console.log('✅ Booking completed successfully:', result);
-        showBookingSuccess(result);
-        
-      } catch (error) {
-        button.textContent = originalText;
-        button.disabled = false;
-        
-        logError('completeBooking', error, { 
-          clientInfo, 
-          cartId, 
-          selectedTime, 
-          selectedService
-        });
-        
-        // Enhanced error handling with specific messages
-        let errorMessage = 'Booking failed. ';
-        
-        if (error.message.includes('payment') && error.message.includes('required')) {
-          errorMessage += 'This booking requires payment processing. Please contact us at (646) 346-8809 to complete your appointment.';
-        } else if (error.message.includes('expired')) {
-          errorMessage += 'Your booking session has expired. Please start over or contact us.';
-        } else if (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('Failed to fetch')) {
-          errorMessage += 'Network connection issue. Please try again or contact us.';
-        } else if (error.message.includes('GraphQL') || error.message.includes('schema')) {
-          errorMessage += 'System configuration issue. Please contact us to complete your appointment.';
-        } else if (error.message.includes('validation')) {
-          errorMessage += 'Booking information is incomplete. Please contact us for assistance.';
-        } else {
-          errorMessage += 'Please contact us at (646) 346-8809 to complete your appointment.';
-        }
-        
-        showErrorMessage(errorMessage);
-        
-        // Always show fallback contact option
-        setTimeout(() => {
-          showSMSOption();
-        }, 2000);
-      }
-    }
-    
-    async function updateCartWithClientInfo() {
-      console.log('✅ Updating cart with client info...');
-      
-      const query = `
-        mutation UpdateCart($cartId: ID!, $email: Email!, $firstName: String!, $lastName: String!, $phoneNumber: PhoneNumber!) {
-          updateCart(input: {
-            id: $cartId,
-            clientInformation: {
-              email: $email,
-              firstName: $firstName,
-              lastName: $lastName,
-              phoneNumber: $phoneNumber
-            }
-          }) {
-            cart {
-              id
-              clientInformation {
-                email
-                firstName
-                lastName
-                phoneNumber
-              }
-            }
-          }
-        }
-      `;
-      
-      try {
-        const data = await makeBoulevardRequest(query, {
-          cartId: cartId,
-          email: clientInfo.email,
-          firstName: clientInfo.firstName,
-          lastName: clientInfo.lastName,
-          phoneNumber: clientInfo.phoneNumber
-        });
-        console.log('✅ Cart updated with client info:', data.updateCart.cart.clientInformation);
-        return data;
-      } catch (error) {
-        logError('updateCartWithClientInfo', error);
-        throw new Error(`Failed to update client information: ${error.message}`);
-      }
-    }
-    
-    function showFieldError(fieldId, message) {
-      const field = document.getElementById(fieldId);
-      field.classList.add('error');
-      
-      const errorDiv = document.createElement('div');
-      errorDiv.className = 'error-text';
-      errorDiv.textContent = message;
-      
-      field.parentNode.insertBefore(errorDiv, field.nextSibling);
-    }
-    
-    function showErrorMessage(message) {
-      const container = document.getElementById('messages');
-      const errorMessage = document.createElement('div');
-      errorMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      bubble.innerHTML = `<div class="error-message">${message}</div>`;
-      
-      errorMessage.appendChild(bubble);
-      container.appendChild(errorMessage);
-      scrollToBottom();
-    }
-    
-    function showBookingSuccess(result) {
-      const injectorText = selectedInjector ? `Provider: ${selectedInjector}<br>` : '';
-      const completedAtText = result && result.completedAt ? `<br>Completed: ${new Date(result.completedAt).toLocaleString()}` : '';
-      
-      const successMessage = `<div class="success-message"><strong>✅ Booking Completed Successfully!</strong><br><br>` +
-                            `Location: ${selectedLocation}<br>` +
-                            `Service: ${selectedService}<br>` +
-                            `Date & Time: ${selectedTime.date} at ${selectedTime.time}<br>` +
-                            `${injectorText}` +
-                            `Client: ${clientInfo.firstName} ${clientInfo.lastName}<br>` +
-                            `${completedAtText}<br><br>` +
-                            `Your appointment has been confirmed and added to our calendar. You should receive a confirmation email shortly.</div>`;
-      
-      addMessage('system', successMessage, function() {
-        showPostBookingOptions();
-      });
-    }
-    
-    function showPostBookingOptions() {
-      const container = document.getElementById('messages');
-      const optionsMessage = document.createElement('div');
-      optionsMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const bookButton = document.createElement('button');
-      bookButton.className = 'primary-button';
-      bookButton.textContent = 'Book Another Appointment';
-      bookButton.onclick = restartChat;
-      
-      const smsButton = document.createElement('button');
-      smsButton.className = 'secondary-button';
-      smsButton.textContent = 'Questions? Contact Us';
-      smsButton.onclick = () => openSMS('follow-up');
-      
-      bubble.appendChild(bookButton);
-      bubble.appendChild(smsButton);
-      
-      optionsMessage.appendChild(bubble);
-      container.appendChild(optionsMessage);
-      scrollToBottom();
-    }
-    
-    function showServiceFallback() {
-      addMessage('system', 'I\'m having trouble loading services right now. Let me connect you with our team:', function() {
-        showSMSOption();
-      });
-    }
-    
-    function showNoAvailabilityMessage() {
-      addMessage('system', `I don't see any available times in the next two weeks. Let me connect you with our team:`, function() {
-        showSMSOption();
-      });
-    }
-    
-    function showErrorFallback(message) {
-      addMessage('system', message + ' Let me connect you:', function() {
-        showSMSOption();
-      });
-    }
-    
-    function showSMSOption() {
-      const container = document.getElementById('messages');
-      const smsMessage = document.createElement('div');
-      smsMessage.className = 'message system';
-      
-      const bubble = document.createElement('div');
-      bubble.className = 'message-bubble';
-      
-      const smsButton = document.createElement('button');
-      smsButton.className = 'secondary-button';
-      smsButton.textContent = 'Text us at (646) 346-8809';
-      smsButton.onclick = () => openSMS('help');
-      
-      bubble.appendChild(smsButton);
-      smsMessage.appendChild(bubble);
-      
-      container.appendChild(smsMessage);
-      scrollToBottom();
-    }
-    
-    function openSMS(context) {
-      let message = "I'd like to book an appointment at Get Plump";
-      
-      if (context === 'follow-up') {
-        message = "I just completed a booking and have a question";
-      } else if (context === 'injector-inquiry') {
-        message = 'I\'m looking for a specific injector that wasn\'t listed';
-      } else if (context === 'service-inquiry') {
-        message = `I'm looking for services at ${selectedLocation} but need different options`;
-      } else if (context === 'time-inquiry') {
-        message = `I'm looking for ${selectedService} at ${selectedLocation} but need different time options`;
-      }
-      
-      message += ".";
-      
-      const encodedMessage = encodeURIComponent(message);
-      window.location.href = 'sms:+16463468809?body=' + encodedMessage;
-    }
-    
-    function restartChat() {
-      startConversation();
-    }
-    
-    function scrollToBottom() {
-      const container = document.getElementById('messages');
-      setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
-      }, 100);
-    }
-    
-    console.log('✅ Script fully loaded with enhanced validation and error handling');
-  </script>
+        };
+
+        // Initialize app
+        bookingApp.init();
+    </script>
 </body>
 </html>
