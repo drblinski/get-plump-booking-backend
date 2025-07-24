@@ -290,6 +290,68 @@
     </div>
 
     <script>
+        // Load business data from API
+        async function loadBusinessLocations() {
+            const query = `
+                query GetLocations {
+                    business {
+                        locations {
+                            id
+                            name
+                            address {
+                                line1
+                                line2
+                                city
+                                state
+                                zip
+                            }
+                        }
+                    }
+                }
+            `;
+            
+            try {
+                const data = await graphqlRequest(query);
+                return data.business.locations.map(location => ({
+                    id: location.id,
+                    name: location.name,
+                    address: `${location.address.line1}, ${location.address.city}, ${location.address.state}`
+                }));
+            } catch (error) {
+                console.error('Failed to load locations:', error);
+                // Fall back to mock data if API fails
+                return LOCATIONS;
+            }
+        }
+
+        async function loadLocationStaff(locationId) {
+            const query = `
+                query GetLocationStaff($locationId: ID!) {
+                    location(id: $locationId) {
+                        staff {
+                            id
+                            displayName
+                            role
+                        }
+                    }
+                }
+            `;
+            
+            try {
+                const data = await graphqlRequest(query, { locationId });
+                return data.location.staff.map(staff => ({
+                    id: staff.id,
+                    name: staff.displayName,
+                    speciality: staff.role,
+                    locationId: locationId
+                }));
+            } catch (error) {
+                console.error('Failed to load staff:', error);
+                // Fall back to mock data if API fails
+                return STAFF_MEMBERS.filter(s => s.locationId === locationId);
+            }
+        }
+
         // Configuration
         const API_BASE = '/api/blvd';
         
@@ -403,22 +465,67 @@
         }
 
         async function getServices(cartId, categoryType) {
-            // Mock implementation - replace with real GraphQL query
-            const services = categoryType === 'injectable' ? [
-                { id: 'inj1', name: 'Botox Treatment', duration: 30, price: 350 },
-                { id: 'inj2', name: 'Dermal Fillers', duration: 45, price: 550 },
-                { id: 'inj3', name: 'Lip Enhancement', duration: 30, price: 450 }
-            ] : [
-                { id: 'skin1', name: 'HydraFacial', duration: 60, price: 150 },
-                { id: 'skin2', name: 'Chemical Peel', duration: 45, price: 125 },
-                { id: 'skin3', name: 'Microneedling', duration: 75, price: 200 }
-            ];
+            const query = `
+                query GetCartAvailableBookableItems($cartId: ID!) {
+                    cart(id: $cartId) {
+                        availableBookableItems {
+                            id
+                            listName
+                            listDuration
+                            listPrice
+                            listPriceCents
+                            listCategory {
+                                name
+                                id
+                            }
+                        }
+                    }
+                }
+            `;
             
-            return services;
+            const variables = { cartId };
+            const data = await graphqlRequest(query, variables);
+            
+            // Filter services by category type
+            const categoryFilter = categoryType === 'injectable' ? 
+                ['Injectable', 'Injectables', 'Botox', 'Filler'] : 
+                ['Facial', 'Skincare', 'Treatment', 'Peel'];
+            
+            const filteredServices = data.cart.availableBookableItems.filter(item => {
+                const categoryName = item.listCategory?.name || '';
+                return categoryFilter.some(filter => 
+                    categoryName.toLowerCase().includes(filter.toLowerCase())
+                );
+            });
+            
+            return filteredServices.map(service => ({
+                id: service.id,
+                name: service.listName,
+                duration: service.listDuration,
+                price: service.listPrice,
+                priceCents: service.listPriceCents
+            }));
+        }
+
+        async function addCartSelectedBookableItem(cartId, itemId, staffVariantId = null) {
+            const query = `
+                mutation AddCartSelectedBookableItem($input: AddCartSelectedBookableItemInput!) {
+                    addCartSelectedBookableItem(input: $input) {
+                        cart { id }
+                    }
+                }
+            `;
+            const variables = { 
+                input: { 
+                    id: cartId, 
+                    itemId: itemId,
+                    ...(staffVariantId && { itemStaffVariantId: staffVariantId })
+                } 
+            };
+            return await graphqlRequest(query, variables);
         }
 
         async function getStaffAvailability(staffId, date) {
-            // Mock implementation - replace with real GraphQL query
             const query = `
                 query StaffAvailability($staffId: ID!, $searchDate: Date!) {
                     staffAvailability(staffId: $staffId, searchDate: $searchDate) {
@@ -431,16 +538,14 @@
                 }
             `;
             
-            // Mock response for now
-            const mockSlots = [
-                { id: 'slot1', startTime: '09:00', endTime: '09:30' },
-                { id: 'slot2', startTime: '10:00', endTime: '10:30' },
-                { id: 'slot3', startTime: '11:30', endTime: '12:00' },
-                { id: 'slot4', startTime: '14:00', endTime: '14:30' },
-                { id: 'slot5', startTime: '15:30', endTime: '16:00' }
-            ];
+            const variables = { staffId, searchDate: date };
+            const data = await graphqlRequest(query, variables);
             
-            return mockSlots;
+            return data.staffAvailability.availableSlots.map(slot => ({
+                id: slot.id,
+                startTime: slot.startTime,
+                endTime: slot.endTime
+            }));
         }
 
         async function reserveSlot(cartId, bookableTimeId) {
@@ -541,22 +646,30 @@
             }
         }
 
-        function selectService(serviceId) {
+        async function selectService(serviceId) {
             bookingState.serviceId = serviceId;
-            const service = bookingState.serviceType === 'injectable' ? 
-                [{ id: 'inj1', name: 'Botox Treatment' }, { id: 'inj2', name: 'Dermal Fillers' }, { id: 'inj3', name: 'Lip Enhancement' }] :
-                [{ id: 'skin1', name: 'HydraFacial' }, { id: 'skin2', name: 'Chemical Peel' }, { id: 'skin3', name: 'Microneedling' }];
             
-            const selectedService = service.find(s => s.id === serviceId);
-            addUserMessage(`Selected: ${selectedService.name}`);
+            const loading = showLoading();
             
-            let staffOptionHtml = 'How would you like to book?<br><br>';
-            staffOptionHtml += '<div class="button-grid">';
-            staffOptionHtml += '<button class="action-button" onclick="selectFirstAvailable()">First Available Time</button>';
-            staffOptionHtml += '<button class="action-button" onclick="showStaffSelection()">Choose Specific Staff</button>';
-            staffOptionHtml += '</div>';
-            
-            addMessage(staffOptionHtml);
+            try {
+                // Add the selected service to the cart
+                await addCartSelectedBookableItem(bookingState.cartId, serviceId);
+                
+                hideLoading(loading);
+                
+                addUserMessage('Service selected');
+                
+                let staffOptionHtml = 'How would you like to book?<br><br>';
+                staffOptionHtml += '<div class="button-grid">';
+                staffOptionHtml += '<button class="action-button" onclick="selectFirstAvailable()">First Available Time</button>';
+                staffOptionHtml += '<button class="action-button" onclick="showStaffSelection()">Choose Specific Staff</button>';
+                staffOptionHtml += '</div>';
+                
+                addMessage(staffOptionHtml);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to add service to cart.', 'selectServiceType(\'' + bookingState.serviceType + '\')');
+            }
         }
 
         async function selectFirstAvailable() {
@@ -565,16 +678,56 @@
             const loading = showLoading();
             
             try {
-                // Mock first available slot
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Add the selected service to the cart first
+                await addCartSelectedBookableItem(bookingState.cartId, bookingState.serviceId);
+                
+                // Get staff for the selected location
+                const locationStaff = await loadLocationStaff(bookingState.locationId);
+                
+                // Find first available staff and time
+                let foundSlot = null;
+                
+                for (const staff of locationStaff) {
+                    // Check next 7 days for availability
+                    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+                        const checkDate = new Date();
+                        checkDate.setDate(checkDate.getDate() + dayOffset);
+                        const dateStr = checkDate.toISOString().split('T')[0];
+                        
+                        try {
+                            const slots = await getStaffAvailability(staff.id, dateStr);
+                            if (slots.length > 0) {
+                                foundSlot = {
+                                    staff: staff,
+                                    date: dateStr,
+                                    slot: slots[0]
+                                };
+                                break;
+                            }
+                        } catch (error) {
+                            // Continue to next staff/date if this one fails
+                            continue;
+                        }
+                    }
+                    if (foundSlot) break;
+                }
                 
                 hideLoading(loading);
                 
-                bookingState.selectedDate = new Date().toISOString().split('T')[0];
-                bookingState.selectedTime = '10:00';
-                bookingState.staffId = 'staff1';
+                if (!foundSlot) {
+                    showError('No available appointments found in the next 7 days. Please try selecting a specific staff member.', 'showStaffSelection()');
+                    return;
+                }
                 
-                addMessage('Great! I found an available slot for you:<br><br><strong>Tomorrow at 10:00 AM with Dr. Sarah Chen</strong><br><br>Ready to confirm this appointment?');
+                bookingState.selectedDate = foundSlot.date;
+                bookingState.selectedTime = foundSlot.slot.id;
+                bookingState.staffId = foundSlot.staff.id;
+                
+                const displayDate = new Date(foundSlot.date).toLocaleDateString();
+                addMessage(`Great! I found an available slot for you:<br><br><strong>${displayDate} at ${foundSlot.slot.startTime} with ${foundSlot.staff.name}</strong><br><br>Ready to confirm this appointment?`);
+                
+                // Reserve the slot
+                await reserveSlot(bookingState.cartId, foundSlot.slot.id);
                 
                 showClientInfoForm();
             } catch (error) {
@@ -583,28 +736,57 @@
             }
         }
 
-        function showStaffSelection() {
+        async function showStaffSelection() {
             addUserMessage('Choose Specific Staff');
             
-            const locationStaff = STAFF_MEMBERS.filter(staff => staff.locationId === bookingState.locationId);
+            const loading = showLoading();
             
-            let staffHtml = 'Please select your preferred provider:<br><br>';
-            staffHtml += '<div class="button-grid single-column">';
-            locationStaff.forEach(staff => {
-                staffHtml += `<button class="action-button" onclick="selectStaff('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
-            });
-            staffHtml += '</div>';
-            
-            addMessage(staffHtml);
+            try {
+                // Load staff for the selected location
+                const locationStaff = await loadLocationStaff(bookingState.locationId);
+                
+                hideLoading(loading);
+                
+                if (locationStaff.length === 0) {
+                    showError('No staff available at this location.');
+                    return;
+                }
+                
+                let staffHtml = 'Please select your preferred provider:<br><br>';
+                staffHtml += '<div class="button-grid single-column">';
+                locationStaff.forEach(staff => {
+                    staffHtml += `<button class="action-button" onclick="selectStaff('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
+                });
+                staffHtml += '</div>';
+                
+                addMessage(staffHtml);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to load staff members.', 'showStaffSelection()');
+            }
         }
 
-        function selectStaff(staffId) {
+        async function selectStaff(staffId) {
             bookingState.staffId = staffId;
             const staff = STAFF_MEMBERS.find(s => s.id === staffId);
-            addUserMessage(`Selected: ${staff.name}`);
+            addUserMessage(`Selected: ${staff ? staff.name : 'Staff Member'}`);
             
-            // Continue to time selection...
-            showCalendarForStaff(staffId);
+            const loading = showLoading();
+            
+            try {
+                // Add staff variant to the selected service if needed
+                if (bookingState.serviceId) {
+                    await addCartSelectedBookableItem(bookingState.cartId, bookingState.serviceId, staffId);
+                }
+                
+                hideLoading(loading);
+                
+                // Continue to time selection...
+                showCalendarForStaff(staffId);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to select staff member.', 'showStaffSelection()');
+            }
         }
 
         function startFlowB() {
@@ -630,21 +812,52 @@
             const loading = showLoading();
             
             try {
-                // Mock quick available times
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Create cart at staff's location
+                bookingState.locationId = staff.locationId;
+                bookingState.cartId = await createCart(bookingState.locationId);
+                
+                // Get next 3 available time slots
+                const quickTimes = [];
+                
+                // Check next 7 days for availability
+                for (let dayOffset = 0; dayOffset < 7 && quickTimes.length < 3; dayOffset++) {
+                    const checkDate = new Date();
+                    checkDate.setDate(checkDate.getDate() + dayOffset);
+                    const dateStr = checkDate.toISOString().split('T')[0];
+                    
+                    try {
+                        const slots = await getStaffAvailability(staffId, dateStr);
+                        for (const slot of slots) {
+                            if (quickTimes.length < 3) {
+                                const displayDate = checkDate.toLocaleDateString('en-US', { 
+                                    weekday: 'short', 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                });
+                                quickTimes.push({
+                                    time: `${displayDate} ${slot.startTime}`,
+                                    id: slot.id,
+                                    date: dateStr,
+                                    slot: slot
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        continue; // Skip this date if error
+                    }
+                }
                 
                 hideLoading(loading);
                 
-                const quickTimes = [
-                    { time: 'Tomorrow 10:00 AM', id: 'quick1' },
-                    { time: 'Tomorrow 2:30 PM', id: 'quick2' },
-                    { time: 'Thursday 11:00 AM', id: 'quick3' }
-                ];
+                if (quickTimes.length === 0) {
+                    showError('No available appointments found for this staff member in the next week.', 'startFlowB()');
+                    return;
+                }
                 
                 let timesHtml = `Here are ${staff.name}'s next available times:<br><br>`;
                 timesHtml += '<div class="button-grid single-column">';
                 quickTimes.forEach(time => {
-                    timesHtml += `<button class="action-button" onclick="selectQuickTime('${time.id}', '${time.time}')">${time.time}</button>`;
+                    timesHtml += `<button class="action-button" onclick="selectQuickTime('${time.id}', '${time.time}', '${time.date}')">${time.time}</button>`;
                 });
                 timesHtml += '</div>';
                 
@@ -655,8 +868,9 @@
             }
         }
 
-        async function selectQuickTime(timeId, timeDisplay) {
+        async function selectQuickTime(timeId, timeDisplay, selectedDate) {
             bookingState.selectedTime = timeId;
+            bookingState.selectedDate = selectedDate;
             addUserMessage(`Selected: ${timeDisplay}`);
             
             let serviceTypeHtml = 'What type of service would you like?<br><br>';
@@ -672,8 +886,36 @@
             bookingState.serviceType = type;
             addUserMessage(type === 'injectable' ? 'Injectable Treatments' : 'Skincare Services');
             
-            addMessage('Perfect! Let me collect your information to complete the booking.');
-            showClientInfoForm();
+            const loading = showLoading();
+            
+            try {
+                // Get services for this type
+                const services = await getServices(bookingState.cartId, type);
+                
+                if (services.length === 0) {
+                    hideLoading(loading);
+                    showError('No services available for this category.');
+                    return;
+                }
+                
+                // For quick booking, auto-select the first available service
+                // In a real implementation, you might want to show the service selection
+                bookingState.serviceId = services[0].id;
+                
+                // Add service to cart
+                await addCartSelectedBookableItem(bookingState.cartId, bookingState.serviceId);
+                
+                // Reserve the time slot
+                await reserveSlot(bookingState.cartId, bookingState.selectedTime);
+                
+                hideLoading(loading);
+                
+                addMessage(`Perfect! Selected ${services[0].name}. Let me collect your information to complete the booking.`);
+                showClientInfoForm();
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to process service selection.', 'selectServiceTypeQuick(\'' + type + '\')');
+            }
         }
 
         function startFlowC() {
@@ -711,7 +953,7 @@
             }
         }
 
-        function showCalendarForStaff(staffId) {
+        async function showCalendarForStaff(staffId) {
             const staff = STAFF_MEMBERS.find(s => s.id === staffId);
             
             let calendarHtml = `Select a date from ${staff.name}'s calendar:<br><br>`;
@@ -738,32 +980,85 @@
                 calendarHtml += `<div class="calendar-header">${day}</div>`;
             });
             
-            // Calendar days
+            const bubble = addMessage(calendarHtml + '</div><div style="text-align: center; margin-top: 10px;">Loading availability...</div>');
+            
+            // Load availability for each day in the month
+            const calendarDays = [];
             const currentDate = new Date(startCalendar);
+            const availabilityPromises = [];
+            
             for (let i = 0; i < 42; i++) {
                 const dayNum = currentDate.getDate();
                 const isCurrentMonth = currentDate.getMonth() === currentMonth;
                 const isPast = currentDate < today;
-                const isAvailable = isCurrentMonth && !isPast && Math.random() > 0.3; // Mock availability
-                
-                let dayClass = 'calendar-day';
-                if (!isCurrentMonth || isPast) {
-                    dayClass += ' disabled';
-                } else if (isAvailable) {
-                    dayClass += ' available';
-                }
-                
                 const dateStr = currentDate.toISOString().split('T')[0];
-                const clickHandler = isAvailable ? `onclick="selectCalendarDate('${dateStr}', '${staffId}')"` : '';
                 
-                calendarHtml += `<div class="${dayClass}" ${clickHandler}>${dayNum}</div>`;
+                calendarDays.push({
+                    dayNum,
+                    isCurrentMonth,
+                    isPast,
+                    dateStr,
+                    isAvailable: false
+                });
+                
+                // Only check availability for current month, future dates
+                if (isCurrentMonth && !isPast) {
+                    availabilityPromises.push(
+                        getStaffAvailability(staffId, dateStr)
+                            .then(slots => ({ dateStr, hasSlots: slots.length > 0 }))
+                            .catch(() => ({ dateStr, hasSlots: false }))
+                    );
+                }
                 
                 currentDate.setDate(currentDate.getDate() + 1);
             }
             
-            calendarHtml += '</div>';
-            
-            addMessage(calendarHtml);
+            try {
+                // Wait for all availability checks
+                const availabilityResults = await Promise.all(availabilityPromises);
+                const availabilityMap = {};
+                availabilityResults.forEach(result => {
+                    availabilityMap[result.dateStr] = result.hasSlots;
+                });
+                
+                // Update calendar days with availability
+                calendarDays.forEach(day => {
+                    if (day.isCurrentMonth && !day.isPast) {
+                        day.isAvailable = availabilityMap[day.dateStr] || false;
+                    }
+                });
+                
+                // Rebuild calendar with availability data
+                let finalCalendarHtml = `Select a date from ${staff.name}'s calendar:<br><br>`;
+                finalCalendarHtml += `<div style="text-align: center; margin-bottom: 15px; font-weight: 600;">${monthNames[currentMonth]} ${currentYear}</div>`;
+                finalCalendarHtml += '<div class="calendar-grid">';
+                
+                // Headers
+                ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                    finalCalendarHtml += `<div class="calendar-header">${day}</div>`;
+                });
+                
+                // Calendar days with availability
+                calendarDays.forEach(day => {
+                    let dayClass = 'calendar-day';
+                    if (!day.isCurrentMonth || day.isPast) {
+                        dayClass += ' disabled';
+                    } else if (day.isAvailable) {
+                        dayClass += ' available';
+                    }
+                    
+                    const clickHandler = day.isAvailable ? `onclick="selectCalendarDate('${day.dateStr}', '${staffId}')"` : '';
+                    finalCalendarHtml += `<div class="${dayClass}" ${clickHandler}>${day.dayNum}</div>`;
+                });
+                
+                finalCalendarHtml += '</div>';
+                
+                // Update the existing message
+                bubble.innerHTML = finalCalendarHtml;
+                
+            } catch (error) {
+                bubble.innerHTML = `Select a date from ${staff.name}'s calendar:<br><br><div class="error-message">Failed to load availability. Please try again.</div>`;
+            }
         }
 
         async function selectCalendarDate(dateStr, staffId) {
@@ -917,7 +1212,21 @@
         }
 
         // Initialize the chat
-        function initializeChat() {
+        async function initializeChat() {
+            // Try to load real locations from API, fall back to mock data
+            let locations = LOCATIONS;
+            try {
+                const apiLocations = await loadBusinessLocations();
+                if (apiLocations.length > 0) {
+                    locations = apiLocations;
+                    // Update global LOCATIONS for use throughout the app
+                    LOCATIONS.length = 0;
+                    LOCATIONS.push(...apiLocations);
+                }
+            } catch (error) {
+                console.log('Using mock location data');
+            }
+            
             addMessage(`
                 Welcome! I'm here to help you book your appointment. Choose how you'd like to get started:<br><br>
                 <div class="button-grid single-column">
