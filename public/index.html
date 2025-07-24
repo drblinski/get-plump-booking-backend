@@ -353,7 +353,8 @@
         }
 
         // Configuration
-        const API_BASE = '/api/blvd';
+        const API_BASE = 'https://dashboard.boulevard.io/api/2020-01/f6a06736-1132-4365-b79a-a69c648a746a/client';
+        const API_KEY = 'YOUR_API_KEY'; // Replace with your actual API key
         
         // Mock data - replace with real data from your system
         const LOCATIONS = [
@@ -378,6 +379,7 @@
             serviceType: null,
             serviceId: null,
             cartId: null,
+            cartData: null,
             selectedDate: null,
             selectedTime: null,
             clientInfo: {}
@@ -426,10 +428,12 @@
         // GraphQL API functions
         async function graphqlRequest(query, variables = {}) {
             try {
-                const response = await fetch(`${API_BASE}/graphql`, {
+                const response = await fetch(API_BASE, {
                     method: 'POST',
                     headers: {
+                        'Authorization': `Basic ${btoa(API_KEY + ':')}`,
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({ query, variables })
                 });
@@ -453,126 +457,186 @@
 
         async function createCart(locationId) {
             const query = `
-                mutation CreateCart($input: CreateCartInput!) {
-                    createCart(input: $input) {
-                        cart { id }
+                mutation CreateCart($locationId: ID!) {
+                    createCart(input: { locationId: $locationId }) {
+                        cart {
+                            id
+                            expiresAt
+                            availableCategories {
+                                name
+                                availableItems {
+                                    id
+                                    name
+                                    description
+                                    ... on CartAvailableBookableItem {
+                                        listPrice
+                                        listDuration
+                                        staffVariants {
+                                            id
+                                            price
+                                            duration
+                                            staff {
+                                                id
+                                                firstName
+                                                lastName
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             `;
-            const variables = { input: { locationId } };
+            const variables = { locationId };
             const data = await graphqlRequest(query, variables);
+            
+            // Store the cart data for later use
+            bookingState.cartData = data.createCart.cart;
             return data.createCart.cart.id;
         }
 
         async function getServices(cartId, categoryType) {
+            // Use the cart data we stored from createCart
+            if (!bookingState.cartData || !bookingState.cartData.availableCategories) {
+                throw new Error('Cart data not available');
+            }
+            
+            const categories = bookingState.cartData.availableCategories;
+            
+            // Filter services by category type
+            const categoryFilter = categoryType === 'injectable' ? 
+                ['Injectable', 'Injectables', 'Botox', 'Filler', 'Dysport', 'Neurotoxin'] : 
+                ['Facial', 'Skincare', 'Treatment', 'Peel', 'HydraFacial', 'Microneedling'];
+            
+            let filteredServices = [];
+            
+            categories.forEach(category => {
+                const categoryName = category.name || '';
+                const isMatchingCategory = categoryFilter.some(filter => 
+                    categoryName.toLowerCase().includes(filter.toLowerCase())
+                );
+                
+                if (isMatchingCategory) {
+                    category.availableItems.forEach(item => {
+                        if (item.listPrice !== undefined) { // Only bookable items
+                            filteredServices.push({
+                                id: item.id,
+                                name: item.name,
+                                description: item.description,
+                                duration: item.listDuration,
+                                price: item.listPrice,
+                                staffVariants: item.staffVariants || []
+                            });
+                        }
+                    });
+                }
+            });
+            
+            return filteredServices;
+        }
+
+        async function addCartSelectedBookableItem(cartId, itemId, staffVariantId = null) {
             const query = `
-                query GetCartAvailableBookableItems($cartId: ID!) {
-                    cart(id: $cartId) {
-                        availableBookableItems {
+                mutation AddCartItem($cartId: ID!, $itemId: ID!, $itemStaffVariantId: ID) {
+                    addCartSelectedBookableItem(input: {
+                        id: $cartId,
+                        itemId: $itemId,
+                        itemStaffVariantId: $itemStaffVariantId
+                    }) {
+                        cart { id }
+                    }
+                }
+            `;
+            const variables = { 
+                cartId: cartId,
+                itemId: itemId,
+                ...(staffVariantId && { itemStaffVariantId: staffVariantId })
+            };
+            return await graphqlRequest(query, variables);
+        }
+
+        async function getCartBookableTimes(cartId, date) {
+            const query = `
+                query GetCartBookableTimes($cartId: ID!, $searchDate: Date!) {
+                    cartBookableTimes(
+                        id: $cartId,
+                        searchDate: $searchDate,
+                        tz: "America/New_York"
+                    ) {
+                        id
+                        startTime
+                    }
+                }
+            `;
+            
+            const variables = { cartId, searchDate: date };
+            const data = await graphqlRequest(query, variables);
+            
+            return data.cartBookableTimes.map(slot => ({
+                id: slot.id,
+                startTime: slot.startTime,
+                endTime: null // Not provided in this API
+            }));
+        }
+
+        async function reserveSlot(cartId, bookableTimeId) {
+            const query = `
+                mutation ReserveCartBookableItems($cartId: ID!, $bookableTimeId: ID!) {
+                    reserveCartBookableItems(input: {
+                        id: $cartId,
+                        bookableTimeId: $bookableTimeId
+                    }) {
+                        cart { id }
+                    }
+                }
+            `;
+            const variables = { cartId, bookableTimeId };
+            return await graphqlRequest(query, variables);
+        }
+
+        async function updateCartWithClientInfo(cartId, clientInfo) {
+            const query = `
+                mutation UpdateCart(
+                    $cartId: ID!,
+                    $email: Email!,
+                    $firstName: String!,
+                    $lastName: String!,
+                    $phoneNumber: PhoneNumber!
+                ) {
+                    updateCart(input: {
+                        id: $cartId,
+                        clientInformation: {
+                            email: $email,
+                            firstName: $firstName,
+                            lastName: $lastName,
+                            phoneNumber: $phoneNumber
+                        }
+                    }) {
+                        cart {
                             id
-                            listName
-                            listDuration
-                            listPrice
-                            listPriceCents
-                            listCategory {
-                                name
-                                id
+                            clientInformation {
+                                firstName
+                                lastName
+                                email
+                                phoneNumber
                             }
                         }
                     }
                 }
             `;
             
-            const variables = { cartId };
-            const data = await graphqlRequest(query, variables);
+            // Split full name into first and last name
+            const nameParts = clientInfo.name.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
             
-            // Filter services by category type
-            const categoryFilter = categoryType === 'injectable' ? 
-                ['Injectable', 'Injectables', 'Botox', 'Filler'] : 
-                ['Facial', 'Skincare', 'Treatment', 'Peel'];
-            
-            const filteredServices = data.cart.availableBookableItems.filter(item => {
-                const categoryName = item.listCategory?.name || '';
-                return categoryFilter.some(filter => 
-                    categoryName.toLowerCase().includes(filter.toLowerCase())
-                );
-            });
-            
-            return filteredServices.map(service => ({
-                id: service.id,
-                name: service.listName,
-                duration: service.listDuration,
-                price: service.listPrice,
-                priceCents: service.listPriceCents
-            }));
-        }
-
-        async function addCartSelectedBookableItem(cartId, itemId, staffVariantId = null) {
-            const query = `
-                mutation AddCartSelectedBookableItem($input: AddCartSelectedBookableItemInput!) {
-                    addCartSelectedBookableItem(input: $input) {
-                        cart { id }
-                    }
-                }
-            `;
             const variables = { 
-                input: { 
-                    id: cartId, 
-                    itemId: itemId,
-                    ...(staffVariantId && { itemStaffVariantId: staffVariantId })
-                } 
-            };
-            return await graphqlRequest(query, variables);
-        }
-
-        async function getStaffAvailability(staffId, date) {
-            const query = `
-                query StaffAvailability($staffId: ID!, $searchDate: Date!) {
-                    staffAvailability(staffId: $staffId, searchDate: $searchDate) {
-                        availableSlots {
-                            id
-                            startTime
-                            endTime
-                        }
-                    }
-                }
-            `;
-            
-            const variables = { staffId, searchDate: date };
-            const data = await graphqlRequest(query, variables);
-            
-            return data.staffAvailability.availableSlots.map(slot => ({
-                id: slot.id,
-                startTime: slot.startTime,
-                endTime: slot.endTime
-            }));
-        }
-
-        async function reserveSlot(cartId, bookableTimeId) {
-            const query = `
-                mutation ReserveCartBookableItems($input: ReserveCartBookableItemsInput!) {
-                    reserveCartBookableItems(input: $input) {
-                        cart { id }
-                    }
-                }
-            `;
-            const variables = { input: { id: cartId, bookableTimeId } };
-            return await graphqlRequest(query, variables);
-        }
-
-        async function updateCartWithClientInfo(cartId, clientInfo) {
-            const query = `
-                mutation UpdateCart($input: UpdateCartInput!) {
-                    updateCart(input: $input) {
-                        cart { id }
-                    }
-                }
-            `;
-            const variables = { 
-                input: { 
-                    id: cartId, 
-                    clientInformation: clientInfo 
-                } 
+                cartId: cartId,
+                email: clientInfo.email,
+                firstName: firstName,
+                lastName: lastName,
+                phoneNumber: clientInfo.phone
             };
             return await graphqlRequest(query, variables);
         }
@@ -581,20 +645,60 @@
             const query = `
                 mutation BookingComplete($input: BookingCompleteInput!) {
                     bookingComplete(input: $input) {
-                        success
-                        appointmentId
+                        booking {
+                            id
+                            state
+                            insertedAt
+                        }
+                        bookingAppointments {
+                            id
+                            startTime
+                            endTime
+                            state
+                            client {
+                                id
+                                firstName
+                                lastName
+                                email
+                                phoneNumber
+                            }
+                            location {
+                                id
+                                name
+                            }
+                            services {
+                                id
+                                name
+                            }
+                            staff {
+                                id
+                                firstName
+                                lastName
+                            }
+                        }
+                        bookingWarnings {
+                            field
+                            message
+                        }
                     }
                 }
             `;
             const variables = { input: { cartId } };
-            return await graphqlRequest(query, variables);
+            const data = await graphqlRequest(query, variables);
+            
+            return {
+                success: true,
+                appointmentId: data.bookingComplete.booking.id,
+                appointments: data.bookingComplete.bookingAppointments,
+                warnings: data.bookingComplete.bookingWarnings
+            };
         }
 
         // Flow implementations
         function startFlowA() {
             currentFlow = 'A';
             currentStep = 1;
-            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, selectedDate: null, selectedTime: null, clientInfo: {} };
+            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, cartData: null, selectedDate: null, selectedTime: null, clientInfo: {} };
             
             let locationsHtml = 'Please select your preferred location:<br><br>';
             locationsHtml += '<div class="button-grid single-column">';
@@ -635,7 +739,10 @@
                 let servicesHtml = `Here are our available ${type} services:<br><br>`;
                 servicesHtml += '<div class="button-grid single-column">';
                 services.forEach(service => {
-                    servicesHtml += `<button class="action-button" onclick="selectService('${service.id}')">${service.name}<br><small>$${service.price} • ${service.duration} min</small></button>`;
+                    const price = service.price ? `${service.price}` : 'Price varies';
+                    const duration = service.duration ? `${service.duration} min` : '';
+                    const details = [price, duration].filter(Boolean).join(' • ');
+                    servicesHtml += `<button class="action-button" onclick="selectService('${service.id}')">${service.name}<br><small>${details}</small></button>`;
                 });
                 servicesHtml += '</div>';
                 
@@ -681,35 +788,27 @@
                 // Add the selected service to the cart first
                 await addCartSelectedBookableItem(bookingState.cartId, bookingState.serviceId);
                 
-                // Get staff for the selected location
-                const locationStaff = await loadLocationStaff(bookingState.locationId);
-                
-                // Find first available staff and time
+                // Check next 7 days for availability
                 let foundSlot = null;
                 
-                for (const staff of locationStaff) {
-                    // Check next 7 days for availability
-                    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-                        const checkDate = new Date();
-                        checkDate.setDate(checkDate.getDate() + dayOffset);
-                        const dateStr = checkDate.toISOString().split('T')[0];
-                        
-                        try {
-                            const slots = await getStaffAvailability(staff.id, dateStr);
-                            if (slots.length > 0) {
-                                foundSlot = {
-                                    staff: staff,
-                                    date: dateStr,
-                                    slot: slots[0]
-                                };
-                                break;
-                            }
-                        } catch (error) {
-                            // Continue to next staff/date if this one fails
-                            continue;
+                for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+                    const checkDate = new Date();
+                    checkDate.setDate(checkDate.getDate() + dayOffset);
+                    const dateStr = checkDate.toISOString().split('T')[0];
+                    
+                    try {
+                        const slots = await getCartBookableTimes(bookingState.cartId, dateStr);
+                        if (slots.length > 0) {
+                            foundSlot = {
+                                date: dateStr,
+                                slot: slots[0]
+                            };
+                            break;
                         }
+                    } catch (error) {
+                        // Continue to next date if this one fails
+                        continue;
                     }
-                    if (foundSlot) break;
                 }
                 
                 hideLoading(loading);
@@ -721,10 +820,9 @@
                 
                 bookingState.selectedDate = foundSlot.date;
                 bookingState.selectedTime = foundSlot.slot.id;
-                bookingState.staffId = foundSlot.staff.id;
                 
                 const displayDate = new Date(foundSlot.date).toLocaleDateString();
-                addMessage(`Great! I found an available slot for you:<br><br><strong>${displayDate} at ${foundSlot.slot.startTime} with ${foundSlot.staff.name}</strong><br><br>Ready to confirm this appointment?`);
+                addMessage(`Great! I found an available slot for you:<br><br><strong>${displayDate} at ${foundSlot.slot.startTime}</strong><br><br>Ready to confirm this appointment?`);
                 
                 // Reserve the slot
                 await reserveSlot(bookingState.cartId, foundSlot.slot.id);
@@ -736,34 +834,24 @@
             }
         }
 
-        async function showStaffSelection() {
+        function showStaffSelection() {
             addUserMessage('Choose Specific Staff');
             
-            const loading = showLoading();
+            const locationStaff = STAFF_MEMBERS.filter(staff => staff.locationId === bookingState.locationId);
             
-            try {
-                // Load staff for the selected location
-                const locationStaff = await loadLocationStaff(bookingState.locationId);
-                
-                hideLoading(loading);
-                
-                if (locationStaff.length === 0) {
-                    showError('No staff available at this location.');
-                    return;
-                }
-                
-                let staffHtml = 'Please select your preferred provider:<br><br>';
-                staffHtml += '<div class="button-grid single-column">';
-                locationStaff.forEach(staff => {
-                    staffHtml += `<button class="action-button" onclick="selectStaff('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
-                });
-                staffHtml += '</div>';
-                
-                addMessage(staffHtml);
-            } catch (error) {
-                hideLoading(loading);
-                showError('Failed to load staff members.', 'showStaffSelection()');
+            if (locationStaff.length === 0) {
+                showError('No staff available at this location.');
+                return;
             }
+            
+            let staffHtml = 'Please select your preferred provider:<br><br>';
+            staffHtml += '<div class="button-grid single-column">';
+            locationStaff.forEach(staff => {
+                staffHtml += `<button class="action-button" onclick="selectStaff('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
+            });
+            staffHtml += '</div>';
+            
+            addMessage(staffHtml);
         }
 
         async function selectStaff(staffId) {
@@ -792,7 +880,7 @@
         function startFlowB() {
             currentFlow = 'B';
             currentStep = 1;
-            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, selectedDate: null, selectedTime: null, clientInfo: {} };
+            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, cartData: null, selectedDate: null, selectedTime: null, clientInfo: {} };
             
             let staffHtml = 'Quick booking! Select a staff member to see their next available times:<br><br>';
             staffHtml += '<div class="button-grid single-column">';
@@ -816,7 +904,7 @@
                 bookingState.locationId = staff.locationId;
                 bookingState.cartId = await createCart(bookingState.locationId);
                 
-                // Get next 3 available time slots
+                // Get next 3 available time slots by checking multiple days
                 const quickTimes = [];
                 
                 // Check next 7 days for availability
@@ -826,7 +914,7 @@
                     const dateStr = checkDate.toISOString().split('T')[0];
                     
                     try {
-                        const slots = await getStaffAvailability(staffId, dateStr);
+                        const slots = await getCartBookableTimes(bookingState.cartId, dateStr);
                         for (const slot of slots) {
                             if (quickTimes.length < 3) {
                                 const displayDate = checkDate.toLocaleDateString('en-US', { 
@@ -850,11 +938,11 @@
                 hideLoading(loading);
                 
                 if (quickTimes.length === 0) {
-                    showError('No available appointments found for this staff member in the next week.', 'startFlowB()');
+                    showError('No available appointments found for this location in the next week.', 'startFlowB()');
                     return;
                 }
                 
-                let timesHtml = `Here are ${staff.name}'s next available times:<br><br>`;
+                let timesHtml = `Here are the next available times:<br><br>`;
                 timesHtml += '<div class="button-grid single-column">';
                 quickTimes.forEach(time => {
                     timesHtml += `<button class="action-button" onclick="selectQuickTime('${time.id}', '${time.time}', '${time.date}')">${time.time}</button>`;
@@ -921,7 +1009,7 @@
         function startFlowC() {
             currentFlow = 'C';
             currentStep = 1;
-            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, selectedDate: null, selectedTime: null, clientInfo: {} };
+            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, cartData: null, selectedDate: null, selectedTime: null, clientInfo: {} };
             
             let staffHtml = 'Select a staff member to view their full calendar:<br><br>';
             staffHtml += '<div class="button-grid single-column">';
@@ -956,7 +1044,7 @@
         async function showCalendarForStaff(staffId) {
             const staff = STAFF_MEMBERS.find(s => s.id === staffId);
             
-            let calendarHtml = `Select a date from ${staff.name}'s calendar:<br><br>`;
+            let calendarHtml = `Select a date to see available times:<br><br>`;
             
             // Generate calendar for current month
             const today = new Date();
@@ -1004,7 +1092,7 @@
                 // Only check availability for current month, future dates
                 if (isCurrentMonth && !isPast) {
                     availabilityPromises.push(
-                        getStaffAvailability(staffId, dateStr)
+                        getCartBookableTimes(bookingState.cartId, dateStr)
                             .then(slots => ({ dateStr, hasSlots: slots.length > 0 }))
                             .catch(() => ({ dateStr, hasSlots: false }))
                     );
@@ -1029,7 +1117,7 @@
                 });
                 
                 // Rebuild calendar with availability data
-                let finalCalendarHtml = `Select a date from ${staff.name}'s calendar:<br><br>`;
+                let finalCalendarHtml = `Select a date to see available times:<br><br>`;
                 finalCalendarHtml += `<div style="text-align: center; margin-bottom: 15px; font-weight: 600;">${monthNames[currentMonth]} ${currentYear}</div>`;
                 finalCalendarHtml += '<div class="calendar-grid">';
                 
@@ -1057,7 +1145,7 @@
                 bubble.innerHTML = finalCalendarHtml;
                 
             } catch (error) {
-                bubble.innerHTML = `Select a date from ${staff.name}'s calendar:<br><br><div class="error-message">Failed to load availability. Please try again.</div>`;
+                bubble.innerHTML = `Select a date to see available times:<br><br><div class="error-message">Failed to load availability. Please try again.</div>`;
             }
         }
 
@@ -1069,7 +1157,7 @@
             const loading = showLoading();
             
             try {
-                const availableSlots = await getStaffAvailability(staffId, dateStr);
+                const availableSlots = await getCartBookableTimes(bookingState.cartId, dateStr);
                 
                 hideLoading(loading);
                 
@@ -1212,21 +1300,7 @@
         }
 
         // Initialize the chat
-        async function initializeChat() {
-            // Try to load real locations from API, fall back to mock data
-            let locations = LOCATIONS;
-            try {
-                const apiLocations = await loadBusinessLocations();
-                if (apiLocations.length > 0) {
-                    locations = apiLocations;
-                    // Update global LOCATIONS for use throughout the app
-                    LOCATIONS.length = 0;
-                    LOCATIONS.push(...apiLocations);
-                }
-            } catch (error) {
-                console.log('Using mock location data');
-            }
-            
+        function initializeChat() {
             addMessage(`
                 Welcome! I'm here to help you book your appointment. Choose how you'd like to get started:<br><br>
                 <div class="button-grid single-column">
