@@ -1,478 +1,935 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Get Plump Booking Widget</title>
-  <style>
-    /* —— Reset & Base —— */
-    * { margin:0; padding:0; box-sizing:border-box }
-    body { font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
-      background:#f5f5f7; display:flex; align-items:center; justify-content:center;
-      height:100vh; }
-    .widget { width:100%; max-width:600px; background:#fff; border-radius:12px;
-      box-shadow:0 4px 20px rgba(0,0,0,0.1); display:flex; flex-direction:column;
-      height:90vh; overflow:hidden; }
-    .header { padding:16px; text-align:center; border-bottom:1px solid #e5e5e7; }
-    .header h1 { font-size:1.25rem; color:#1d1d1f; }
-    #messages { flex:1; overflow-y:auto; padding:16px; }
-    .msg { margin-bottom:16px; display:flex; }
-    .msg.system { justify-content:flex-start; }
-    .msg.user   { justify-content:flex-end;   }
-    .bubble { max-width:75%; padding:12px 16px; border-radius:16px; line-height:1.4; }
-    .msg.system .bubble { background:#e9e9eb; color:#1d1d1f; border-bottom-left-radius:4px; }
-    .msg.user   .bubble { background:#007AFF; color:#fff; border-bottom-right-radius:4px; }
-    button { cursor:pointer; border:none; }
-    .grid { display:grid; gap:12px; margin-top:8px; }
-    .button { background:#fff; border:2px solid #e5e5e7; padding:12px;
-      border-radius:12px; text-align:center; font-weight:500; transition:all .2s; }
-    .button:hover { border-color:#007AFF; transform:translateY(-2px); }
-    .primary { background:#007AFF; color:#fff; padding:12px 20px; border-radius:12px; }
-    .primary:hover { background:#0056d6; }
-    .input { width:100%; padding:10px; margin-bottom:8px;
-      border:2px solid #e5e5e7; border-radius:8px; font-size:1rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Appointment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .chat-container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 15px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .system-message {
+            text-align: left;
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .bubble {
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .system-bubble {
+            background: #f1f3f5;
+            color: #333;
+            border-bottom-left-radius: 6px;
+        }
+
+        .user-bubble {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .button-grid.single-column {
+            grid-template-columns: 1fr;
+        }
+
+        .button-grid.three-column {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .action-button {
+            background: white;
+            border: 2px solid #4facfe;
+            color: #4facfe;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .action-button:hover {
+            background: #4facfe;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-weight: 600;
+            padding: 8px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            background: white;
+        }
+
+        .calendar-day:hover {
+            background: #f8f9fa;
+        }
+
+        .calendar-day.available {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        .calendar-day.available:hover {
+            background: #2196f3;
+            color: white;
+        }
+
+        .calendar-day.disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 8px 12px;
+            border: 1px solid #4facfe;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            background: white;
+            color: #4facfe;
+        }
+
+        .time-slot:hover {
+            background: #4facfe;
+            color: white;
+        }
+
+        .form-group {
+            margin-top: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .form-input.error {
+            border-color: #ff6b6b;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ffe0e0;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #e9ecef;
+            background: white;
+        }
+
+        .back-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .back-button:hover {
+            background: #5a6268;
+        }
+    </style>
 </head>
 <body>
-  <div class="widget">
-    <div class="header"><h1>Book Your Plump Appointment</h1></div>
-    <div id="messages"></div>
-  </div>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Book Your Appointment</h2>
+            <p>Let's find the perfect time for you</p>
+        </div>
+        <div class="chat-messages" id="messages"></div>
+        <div class="chat-input" id="input-area" style="display: none;"></div>
+    </div>
 
-  <script>
-  // —— Configuration —— 
-  const BOULEVARD_API = '/api/blvd';
-  const LOCATIONS = {
-    'West Village':'ffaaff3c-d5ba-408e-ba3b-455554b77116',
-    SoHo:'89763e68-2454-429c-ae9c-c1b4d91e7b81',
-    Tribeca:'43dfb866-a872-4f01-9491-6c6584e3c3e7',
-    Miami:'1cbb848e-138b-4142-bc3d-b9f4ea9a42db'
-  };
-  const STAFF = [
-    { id:'s1', name:'Dr Sarah Johnson', locations:['West Village','SoHo'] },
-    { id:'s2', name:'Dr Alex Kim',       locations:['Tribeca','Miami']   },
-    { id:'s3', name:'Dr Maria Chen',     locations:['SoHo','Tribeca']   }
-  ];
+    <script>
+        // Configuration
+        const API_BASE = '/api/blvd';
+        
+        // Mock data - replace with real data from your system
+        const LOCATIONS = [
+            { id: 'loc1', name: 'Downtown Clinic', address: '123 Main St' },
+            { id: 'loc2', name: 'West Side Spa', address: '456 Oak Ave' },
+            { id: 'loc3', name: 'North Branch', address: '789 Pine Rd' }
+        ];
 
-  // —— State ——
-  let state = {
-    flow:null,          // 'A'|'B'|'C'
-    location:null,
-    treatment:null,     // 'injectable'|'skincare'
-    serviceId:null, serviceName:null,
-    staffId:null,   staffName:null,
-    cartId:null,
-    timeSlot:{ id:null, label:null, location:null },
-    client:{ firstName:'', lastName:'', email:'', phone:'' },
-    // For Flow C:
-    staffAvailabilityData:{}  // { 'YYYY-MM-DD': [ {id, startTime, locationName}, … ] }
-  };
-  let currentCalendarDate = null;
+        const STAFF_MEMBERS = [
+            { id: 'staff1', name: 'Dr. Sarah Chen', speciality: 'Injectable Specialist', locationId: 'loc1' },
+            { id: 'staff2', name: 'Emma Rodriguez', speciality: 'Skincare Expert', locationId: 'loc1' },
+            { id: 'staff3', name: 'Dr. Mike Johnson', speciality: 'Injectable Specialist', locationId: 'loc2' },
+            { id: 'staff4', name: 'Lisa Wang', speciality: 'Skincare Expert', locationId: 'loc3' }
+        ];
 
-  // —— GraphQL helper ——
-  function gql(query, variables={}) {
-    return fetch(BOULEVARD_API, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ query, variables })
-    }).then(r=>r.json());
-  }
+        // State management
+        let currentFlow = null;
+        let currentStep = 0;
+        let bookingState = {
+            locationId: null,
+            staffId: null,
+            serviceType: null,
+            serviceId: null,
+            cartId: null,
+            selectedDate: null,
+            selectedTime: null,
+            clientInfo: {}
+        };
 
-  // —— UI helpers ——
-  function addMessage(who, html, cb) {
-    const m = document.createElement('div');
-    m.className = 'msg ' + who;
-    const b = document.createElement('div');
-    b.className = 'bubble';
-    b.innerHTML = html;
-    m.appendChild(b);
-    document.getElementById('messages').appendChild(m);
-    m.scrollIntoView({ behavior:'smooth' });
-    if (cb) setTimeout(cb, 400);
-  }
-  function makeButton(text, onClick, cls='button') {
-    const btn = document.createElement('button');
-    btn.className = cls;
-    btn.textContent = text;
-    btn.onclick = onClick;
-    return btn;
-  }
+        // DOM helpers
+        const messagesContainer = document.getElementById('messages');
 
-  // —— Flows Entry ——
-  function start() {
-    addMessage('system','Welcome! Choose how to book:', ()=>{
-      const grid = document.createElement('div'); grid.className='grid';
-      grid.appendChild(makeButton('A) By Location ▶︎ Category ▶︎…', ()=>{ state.flow='A'; flowA_start(); }));
-      grid.appendChild(makeButton('B) By Staff ▶︎ Quick Time ▶︎…', ()=>{ state.flow='B'; flowB_start(); }));
-      grid.appendChild(makeButton('C) Staff Availability ▶︎ Calendar ▶︎…', ()=>{ state.flow='C'; flowC_start(); }));
-      addMessage('system', grid.outerHTML);
-    });
-  }
-
-  // —— FLOW A —— Location → Treatment → Service → First/Staff → Info → Booking
-  function flowA_start() {
-    addMessage('system','Select location:', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      for (let loc in LOCATIONS) {
-        g.appendChild(makeButton(loc, ()=>{
-          state.location=loc; addMessage('user',loc, flowA_chooseTreatment);
-        }));
-      }
-      addMessage('system',g.outerHTML);
-    });
-  }
-  function flowA_chooseTreatment() {
-    addMessage('system','Select treatment type:', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      [['Injectable','injectable'],['Skincare','skincare']].forEach(([lab,val])=>{
-        g.appendChild(makeButton(lab, ()=>{
-          state.treatment=val; addMessage('user',lab, flowA_loadServices);
-        }));
-      });
-      addMessage('system',g.outerHTML);
-    });
-  }
-  function flowA_loadServices() {
-    addMessage('system','Loading services…');
-    const Q = `
-      mutation($loc:ID!){ createCart(input:{locationId:$loc}){
-        cart{id availableCategories{name availableItems{id name listPrice}}}
-      }}`;
-    const locUrn = 'urn:blvd:Location:'+LOCATIONS[state.location];
-    gql(Q,{loc:locUrn})
-      .then(r=>{
-        state.cartId = r.data.createCart.cart.id;
-        const items = r.data.createCart.cart.availableCategories
-          .flatMap(c=>c.availableItems)
-          .filter(it=>{
-            const n=it.name.toLowerCase();
-            return state.treatment==='injectable'
-              ? /(botox|filler|inject)/.test(n)
-              : /(laser|microneedling|peel|hydrafacial)/.test(n);
-          });
-        const g=document.createElement('div'); g.className='grid';
-        items.forEach(it=>{
-          g.appendChild(makeButton(
-            `${it.name} – $${Math.round(it.listPrice/100)}`,
-            ()=>{ state.serviceId=it.id; state.serviceName=it.name;
-                   addMessage('user',it.name, flowA_chooseFirstOrStaff); }
-          ));
-        });
-        addMessage('system', g.outerHTML);
-      });
-  }
-  function flowA_chooseFirstOrStaff() {
-    addMessage('system','First available or pick staff?', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      [['First Available','first'],['Select Staff','staff']].forEach(([lab, val])=>{
-        g.appendChild(makeButton(lab, ()=>{
-          addMessage('user',lab);
-          val==='first' ? flowA_reserveFirst() : flowA_pickStaff();
-        }));
-      });
-      addMessage('system',g.outerHTML);
-    });
-  }
-  function flowA_reserveFirst()    { flowA_completeBooking(); }
-  function flowA_pickStaff() {
-    addMessage('system','Select staff:', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      STAFF.forEach(s=>{
-        g.appendChild(makeButton(s.name, ()=>{
-          state.staffId=s.id; state.staffName=s.name;
-          addMessage('user',s.name, ()=>flowA_completeBooking());
-        }));
-      });
-      addMessage('system',g.outerHTML);
-    });
-  }
-  function flowA_completeBooking() {
-    // 1) add item
-    const addQ = `
-      mutation($cart:ID!,$item:ID!){ addCartSelectedBookableItem(input:{
-        id:$cart,itemId:$item }){ cart{id} } }`;
-    gql(addQ,{cart:state.cartId,item:state.serviceId})
-      .then(()=>flow_reserveTime());
-  }
-
-  // —— FLOW B —— Staff → Quick Time → Treatment → Info → Booking
-  function flowB_start() {
-    addMessage('system','Select staff for quick booking:', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      STAFF.forEach(s=>{
-        g.appendChild(makeButton(s.name, ()=>{
-          state.staffId=s.id; state.staffName=s.name;
-          addMessage('user',s.name, flowB_quickTimes);
-        }));
-      });
-      addMessage('system',g.outerHTML);
-    });
-  }
-  function flowB_quickTimes() {
-    addMessage('system','Loading next available slots…');
-    // mock three times
-    const slots=[ 'Tomorrow 10:00 AM','Tomorrow 2:00 PM','Day After 9:00 AM' ];
-    const g=document.createElement('div'); g.className='grid';
-    slots.forEach((t,i)=>g.appendChild(makeButton(t, ()=>{
-      state.timeSlot={id:'t'+i,label:t,location:state.staffName};
-      addMessage('user',t, flowB_chooseTreatment);
-    })));
-    addMessage('system',g.outerHTML);
-  }
-  function flowB_chooseTreatment() {
-    addMessage('system','Select treatment type:', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      [['Injectable','injectable'],['Skincare','skincare']].forEach(([lab,val])=>{
-        g.appendChild(makeButton(lab, ()=>{
-          state.treatment=val; addMessage('user',lab, flow_completeBooking);
-        }));
-      });
-      addMessage('system',g.outerHTML);
-    });
-  }
-
-  // —— FLOW C —— Staff Availability → Calendar → Date → Time → Info → Booking
-  function flowC_start() {
-    addMessage('system','Select staff to view full calendar:', ()=>{
-      const g=document.createElement('div'); g.className='grid';
-      STAFF.forEach(s=>{
-        g.appendChild(makeButton(s.name, ()=>{
-          state.staffId=s.id; state.staffName=s.name;
-          // create a cart at first staffed location
-          const loc = s.locations[0]; state.location=loc;
-          const Q=`mutation($loc:ID!){createCart(input:{locationId:$loc}){cart{id}}}`;
-          gql(Q,{loc:'urn:blvd:Location:'+LOCATIONS[loc]})
-            .then(r=>{ state.cartId = r.data.createCart.cart.id;
-                       addMessage('user',s.name, flowC_loadCalendar); });
-        }));
-      });
-      addMessage('system',g.outerHTML);
-    });
-  }
-  function initializeCalendar() {
-    if(!currentCalendarDate){
-      currentCalendarDate=new Date();
-      currentCalendarDate.setDate(1);
-      currentCalendarDate.setHours(0,0,0,0);
-    }
-  }
-  function flowC_loadCalendar() {
-    state.staffAvailabilityData={};
-    initializeCalendar();
-    renderStaffCalendar();
-    loadStaffAvailabilityForMonth();
-  }
-  function renderStaffCalendar() {
-    const container = document.getElementById('messages');
-    // remove last calendar if exists
-    const old = container.querySelector('.staff-calendar');
-    if(old) old.remove();
-
-    const wrap = document.createElement('div');
-    wrap.className='msg system staff-calendar';
-    const b = document.createElement('div'); b.className='bubble';
-
-    // header
-    const header = document.createElement('div');
-    header.style.display='flex';
-    header.style.justifyContent='space-between';
-    header.style.marginBottom='8px';
-    ['←','→'].forEach((sym,i)=>{
-      const btn = document.createElement('button');
-      btn.textContent = i===0?sym+' Prev Month':'Next Month '+sym;
-      btn.className='button';
-      btn.onclick = ()=>{
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + (i===0?-1:1));
-        state.staffAvailabilityData={}; 
-        renderStaffCalendar();
-        loadStaffAvailabilityForMonth();
-      };
-      header.appendChild(btn);
-    });
-    const title = document.createElement('div');
-    title.textContent = state.staffName + ' Availability – ' +
-      currentCalendarDate.toLocaleDateString('en-US',{ month:'long',year:'numeric'});
-    title.style.alignSelf='center';
-    header.insertBefore(title, header.children[1]);
-    b.appendChild(header);
-
-    // day names
-    const grid = document.createElement('div');
-    grid.className='grid';
-    grid.style.gridTemplateColumns='repeat(7,1fr)';
-    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-      .forEach(d=>{ const dEl=document.createElement('div');
-                    dEl.textContent=d;
-                    dEl.style.textAlign='center';
-                    grid.appendChild(dEl);
-                  });
-
-    // dates
-    const year = currentCalendarDate.getFullYear();
-    const month= currentCalendarDate.getMonth();
-    const firstDay=new Date(year,month,1).getDay();
-    const daysInMonth=new Date(year,month+1,0).getDate();
-    // blanks
-    for(let i=0;i<firstDay;i++){
-      const cell=document.createElement('div');
-      cell.style.height='60px';
-      grid.appendChild(cell);
-    }
-    // actual days
-    for(let d=1;d<=daysInMonth;d++){
-      const date=new Date(year,month,d);
-      const ds = date.toISOString().split('T')[0];
-      const cell=document.createElement('div');
-      cell.style.border='1px solid #e5e5e7';
-      cell.style.borderRadius='8px';
-      cell.style.padding='4px';
-      cell.style.cursor='pointer';
-      cell.onclick = ()=>flowC_showTimesForDate(date);
-      // highlight if availability
-      if(state.staffAvailabilityData[ds] &&
-         state.staffAvailabilityData[ds].length>0){
-        cell.style.background='#e0f7ea';
-      }
-      const num=document.createElement('div');
-      num.textContent=d;
-      num.style.fontWeight='500';
-      cell.appendChild(num);
-      grid.appendChild(cell);
-    }
-    b.appendChild(grid);
-
-    // time-slots container
-    const tsCont = document.createElement('div');
-    tsCont.className='staff-times';
-    tsCont.style.marginTop='12px';
-    b.appendChild(tsCont);
-
-    wrap.appendChild(b);
-    container.appendChild(wrap);
-    wrap.scrollIntoView({behavior:'smooth'});
-  }
-  function loadStaffAvailabilityForMonth(){
-    const year=currentCalendarDate.getFullYear();
-    const month=currentCalendarDate.getMonth();
-    const days=new Date(year,month+1,0).getDate();
-    const calls=[];
-    for(let d=1; d<=days; d++){
-      const date=new Date(year,month,d);
-      if(date>=new Date()){
-        calls.push(loadStaffAvailabilityForDate(date));
-      }
-    }
-    Promise.all(calls).then(renderStaffCalendar);
-  }
-  function loadStaffAvailabilityForDate(date){
-    const ds=date.toISOString().split('T')[0];
-    const Q = `
-      query($staff:ID!,$date:Date!){
-        staffAvailability(staffId:$staff,searchDate:$date){
-          id,startTime,location{name}
+        function addMessage(content, isUser = false, showButtons = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'system-message'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = `bubble ${isUser ? 'user-bubble' : 'system-bubble'}`;
+            bubble.innerHTML = content;
+            
+            messageDiv.appendChild(bubble);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return bubble;
         }
-      }`;
-    return gql(Q,{staff:state.staffId,date:ds})
-      .then(r=>{
-        state.staffAvailabilityData[ds] = 
-          r.data.staffAvailability.map(x=>({
-            id: x.id,
-            startTime: x.startTime,
-            locationName: x.location.name
-          }));
-      }).catch(_=>{
-        state.staffAvailabilityData[ds]=[];
-      });
-  }
-  function flowC_showTimesForDate(date){
-    const ds=date.toISOString().split('T')[0];
-    const slots=state.staffAvailabilityData[ds]||[];
-    const tsWr = document.querySelector('.staff-times');
-    tsWr.innerHTML = '';
-    if(!slots.length){
-      tsWr.innerHTML='<em>No slots</em>'; return;
-    }
-    const g=document.createElement('div'); g.className='grid';
-    slots.forEach(s=>{
-      const tLabel = new Date(s.startTime)
-        .toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-      g.appendChild(makeButton(
-        tLabel + ' @ ' + s.locationName,
-        ()=>{
-          state.timeSlot={ id:s.id, label:tLabel, location:s.locationName };
-          addMessage('user',tLabel+' @ '+s.locationName, flow_completeBooking);
-        }
-      ));
-    });
-    tsWr.appendChild(g);
-  }
 
-  // —— Shared Booking Steps ——
-  function flow_reserveTime(){
-    const Q = `
-      mutation($cart:ID!,$time:ID!){ reserveCartBookableItems(input:{
-        id:$cart, bookableTimeId:$time }){ cart{id} } }`;
-    gql(Q,{cart:state.cartId,time:state.timeSlot.id})
-      .then(()=>flow_collectInfo())
-      .catch(()=>addMessage('system','❌ Time reservation failed.'));
-  }
-  function flow_collectInfo(){
-    addMessage('system','Enter contact info:');
-    const c=document.createElement('div');
-    c.innerHTML=`
-      <input id="fn" class="input" placeholder="First Name">
-      <input id="ln" class="input" placeholder="Last Name">
-      <input id="em" class="input" placeholder="Email">
-      <input id="ph" class="input" placeholder="Phone">
-      <button class="primary">Complete Booking</button>`;
-    c.querySelector('button').onclick=flow_updateClient;
-    addMessage('system',c.outerHTML);
-  }
-  function flow_updateClient(){
-    state.client = {
-      firstName:document.getElementById('fn').value,
-      lastName: document.getElementById('ln').value,
-      email:    document.getElementById('em').value,
-      phone:    document.getElementById('ph').value
-    };
-    const Q = `
-      mutation($cart:ID!,$email:Email!,$fn:String!,$ln:String!,$ph:PhoneNumber!){
-        updateCart(input:{
-          id:$cart,
-          clientInformation:{
-            email:$email, firstName:$fn, lastName:$ln, phoneNumber:$ph
-          }
-        }){ cart{id} } }`;
-    gql(Q,{
-      cart: state.cartId,
-      email: state.client.email,
-      fn:    state.client.firstName,
-      ln:    state.client.lastName,
-      ph:    state.client.phone
-    }).finally(flow_completeBooking);
-  }
-  function flow_completeBooking(){
-    const Q = `
-      mutation($input:BookingCompleteInput!){
-        bookingComplete(input:$input){
-          booking{id}
+        function addUserMessage(text) {
+            addMessage(text, true);
         }
-      }`;
-    gql(Q,{ input:{ cartId:state.cartId } })
-      .then(res=>{
-        addMessage('system',
-          `<strong>✅ Booking Confirmed!</strong><br>
-           Provider: ${state.staffName||'Any'}<br>
-           ${state.serviceName||''}<br>
-           ${state.timeSlot.label}<br>
-           ${state.client.firstName}, check your email shortly.`
-        );
-      })
-      .catch(()=>addMessage('system','❌ Booking failed.'));
-  }
 
-  // —— Initialize ——
-  document.addEventListener('DOMContentLoaded', start);
-  </script>
+        function showLoading() {
+            return addMessage('<div class="loading"></div> Processing...');
+        }
+
+        function hideLoading(loadingElement) {
+            if (loadingElement && loadingElement.parentNode) {
+                loadingElement.parentNode.parentNode.remove();
+            }
+        }
+
+        function showError(message, retry = null) {
+            let errorHtml = `<div class="error-message">${message}</div>`;
+            if (retry) {
+                errorHtml += `<button class="action-button" onclick="${retry}" style="margin-top: 10px;">Try Again</button>`;
+            }
+            addMessage(errorHtml);
+        }
+
+        // GraphQL API functions
+        async function graphqlRequest(query, variables = {}) {
+            try {
+                const response = await fetch(`${API_BASE}/graphql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query, variables })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.errors) {
+                    throw new Error(data.errors[0].message);
+                }
+
+                return data.data;
+            } catch (error) {
+                console.error('GraphQL Error:', error);
+                throw error;
+            }
+        }
+
+        async function createCart(locationId) {
+            const query = `
+                mutation CreateCart($input: CreateCartInput!) {
+                    createCart(input: $input) {
+                        cart { id }
+                    }
+                }
+            `;
+            const variables = { input: { locationId } };
+            const data = await graphqlRequest(query, variables);
+            return data.createCart.cart.id;
+        }
+
+        async function getServices(cartId, categoryType) {
+            // Mock implementation - replace with real GraphQL query
+            const services = categoryType === 'injectable' ? [
+                { id: 'inj1', name: 'Botox Treatment', duration: 30, price: 350 },
+                { id: 'inj2', name: 'Dermal Fillers', duration: 45, price: 550 },
+                { id: 'inj3', name: 'Lip Enhancement', duration: 30, price: 450 }
+            ] : [
+                { id: 'skin1', name: 'HydraFacial', duration: 60, price: 150 },
+                { id: 'skin2', name: 'Chemical Peel', duration: 45, price: 125 },
+                { id: 'skin3', name: 'Microneedling', duration: 75, price: 200 }
+            ];
+            
+            return services;
+        }
+
+        async function getStaffAvailability(staffId, date) {
+            // Mock implementation - replace with real GraphQL query
+            const query = `
+                query StaffAvailability($staffId: ID!, $searchDate: Date!) {
+                    staffAvailability(staffId: $staffId, searchDate: $searchDate) {
+                        availableSlots {
+                            id
+                            startTime
+                            endTime
+                        }
+                    }
+                }
+            `;
+            
+            // Mock response for now
+            const mockSlots = [
+                { id: 'slot1', startTime: '09:00', endTime: '09:30' },
+                { id: 'slot2', startTime: '10:00', endTime: '10:30' },
+                { id: 'slot3', startTime: '11:30', endTime: '12:00' },
+                { id: 'slot4', startTime: '14:00', endTime: '14:30' },
+                { id: 'slot5', startTime: '15:30', endTime: '16:00' }
+            ];
+            
+            return mockSlots;
+        }
+
+        async function reserveSlot(cartId, bookableTimeId) {
+            const query = `
+                mutation ReserveCartBookableItems($input: ReserveCartBookableItemsInput!) {
+                    reserveCartBookableItems(input: $input) {
+                        cart { id }
+                    }
+                }
+            `;
+            const variables = { input: { id: cartId, bookableTimeId } };
+            return await graphqlRequest(query, variables);
+        }
+
+        async function updateCartWithClientInfo(cartId, clientInfo) {
+            const query = `
+                mutation UpdateCart($input: UpdateCartInput!) {
+                    updateCart(input: $input) {
+                        cart { id }
+                    }
+                }
+            `;
+            const variables = { 
+                input: { 
+                    id: cartId, 
+                    clientInformation: clientInfo 
+                } 
+            };
+            return await graphqlRequest(query, variables);
+        }
+
+        async function completeBooking(cartId) {
+            const query = `
+                mutation BookingComplete($input: BookingCompleteInput!) {
+                    bookingComplete(input: $input) {
+                        success
+                        appointmentId
+                    }
+                }
+            `;
+            const variables = { input: { cartId } };
+            return await graphqlRequest(query, variables);
+        }
+
+        // Flow implementations
+        function startFlowA() {
+            currentFlow = 'A';
+            currentStep = 1;
+            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, selectedDate: null, selectedTime: null, clientInfo: {} };
+            
+            let locationsHtml = 'Please select your preferred location:<br><br>';
+            locationsHtml += '<div class="button-grid single-column">';
+            LOCATIONS.forEach(location => {
+                locationsHtml += `<button class="action-button" onclick="selectLocation('${location.id}')">${location.name}<br><small>${location.address}</small></button>`;
+            });
+            locationsHtml += '</div>';
+            
+            addMessage(locationsHtml);
+        }
+
+        async function selectLocation(locationId) {
+            bookingState.locationId = locationId;
+            const location = LOCATIONS.find(l => l.id === locationId);
+            addUserMessage(`Selected: ${location.name}`);
+            
+            let serviceTypeHtml = 'What type of service are you looking for?<br><br>';
+            serviceTypeHtml += '<div class="button-grid">';
+            serviceTypeHtml += '<button class="action-button" onclick="selectServiceType(\'injectable\')">Injectable Treatments</button>';
+            serviceTypeHtml += '<button class="action-button" onclick="selectServiceType(\'skincare\')">Skincare Services</button>';
+            serviceTypeHtml += '</div>';
+            
+            addMessage(serviceTypeHtml);
+        }
+
+        async function selectServiceType(type) {
+            bookingState.serviceType = type;
+            addUserMessage(type === 'injectable' ? 'Injectable Treatments' : 'Skincare Services');
+            
+            const loading = showLoading();
+            
+            try {
+                bookingState.cartId = await createCart(bookingState.locationId);
+                const services = await getServices(bookingState.cartId, type);
+                
+                hideLoading(loading);
+                
+                let servicesHtml = `Here are our available ${type} services:<br><br>`;
+                servicesHtml += '<div class="button-grid single-column">';
+                services.forEach(service => {
+                    servicesHtml += `<button class="action-button" onclick="selectService('${service.id}')">${service.name}<br><small>$${service.price} • ${service.duration} min</small></button>`;
+                });
+                servicesHtml += '</div>';
+                
+                addMessage(servicesHtml);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to load services. Please try again.', 'selectServiceType(\'' + type + '\')');
+            }
+        }
+
+        function selectService(serviceId) {
+            bookingState.serviceId = serviceId;
+            const service = bookingState.serviceType === 'injectable' ? 
+                [{ id: 'inj1', name: 'Botox Treatment' }, { id: 'inj2', name: 'Dermal Fillers' }, { id: 'inj3', name: 'Lip Enhancement' }] :
+                [{ id: 'skin1', name: 'HydraFacial' }, { id: 'skin2', name: 'Chemical Peel' }, { id: 'skin3', name: 'Microneedling' }];
+            
+            const selectedService = service.find(s => s.id === serviceId);
+            addUserMessage(`Selected: ${selectedService.name}`);
+            
+            let staffOptionHtml = 'How would you like to book?<br><br>';
+            staffOptionHtml += '<div class="button-grid">';
+            staffOptionHtml += '<button class="action-button" onclick="selectFirstAvailable()">First Available Time</button>';
+            staffOptionHtml += '<button class="action-button" onclick="showStaffSelection()">Choose Specific Staff</button>';
+            staffOptionHtml += '</div>';
+            
+            addMessage(staffOptionHtml);
+        }
+
+        async function selectFirstAvailable() {
+            addUserMessage('First Available Time');
+            
+            const loading = showLoading();
+            
+            try {
+                // Mock first available slot
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                hideLoading(loading);
+                
+                bookingState.selectedDate = new Date().toISOString().split('T')[0];
+                bookingState.selectedTime = '10:00';
+                bookingState.staffId = 'staff1';
+                
+                addMessage('Great! I found an available slot for you:<br><br><strong>Tomorrow at 10:00 AM with Dr. Sarah Chen</strong><br><br>Ready to confirm this appointment?');
+                
+                showClientInfoForm();
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to find available times. Please try selecting a specific staff member.', 'showStaffSelection()');
+            }
+        }
+
+        function showStaffSelection() {
+            addUserMessage('Choose Specific Staff');
+            
+            const locationStaff = STAFF_MEMBERS.filter(staff => staff.locationId === bookingState.locationId);
+            
+            let staffHtml = 'Please select your preferred provider:<br><br>';
+            staffHtml += '<div class="button-grid single-column">';
+            locationStaff.forEach(staff => {
+                staffHtml += `<button class="action-button" onclick="selectStaff('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
+            });
+            staffHtml += '</div>';
+            
+            addMessage(staffHtml);
+        }
+
+        function selectStaff(staffId) {
+            bookingState.staffId = staffId;
+            const staff = STAFF_MEMBERS.find(s => s.id === staffId);
+            addUserMessage(`Selected: ${staff.name}`);
+            
+            // Continue to time selection...
+            showCalendarForStaff(staffId);
+        }
+
+        function startFlowB() {
+            currentFlow = 'B';
+            currentStep = 1;
+            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, selectedDate: null, selectedTime: null, clientInfo: {} };
+            
+            let staffHtml = 'Quick booking! Select a staff member to see their next available times:<br><br>';
+            staffHtml += '<div class="button-grid single-column">';
+            STAFF_MEMBERS.forEach(staff => {
+                staffHtml += `<button class="action-button" onclick="selectStaffQuick('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
+            });
+            staffHtml += '</div>';
+            
+            addMessage(staffHtml);
+        }
+
+        async function selectStaffQuick(staffId) {
+            bookingState.staffId = staffId;
+            const staff = STAFF_MEMBERS.find(s => s.id === staffId);
+            addUserMessage(`Selected: ${staff.name}`);
+            
+            const loading = showLoading();
+            
+            try {
+                // Mock quick available times
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                hideLoading(loading);
+                
+                const quickTimes = [
+                    { time: 'Tomorrow 10:00 AM', id: 'quick1' },
+                    { time: 'Tomorrow 2:30 PM', id: 'quick2' },
+                    { time: 'Thursday 11:00 AM', id: 'quick3' }
+                ];
+                
+                let timesHtml = `Here are ${staff.name}'s next available times:<br><br>`;
+                timesHtml += '<div class="button-grid single-column">';
+                quickTimes.forEach(time => {
+                    timesHtml += `<button class="action-button" onclick="selectQuickTime('${time.id}', '${time.time}')">${time.time}</button>`;
+                });
+                timesHtml += '</div>';
+                
+                addMessage(timesHtml);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to load available times.', 'selectStaffQuick(\'' + staffId + '\')');
+            }
+        }
+
+        async function selectQuickTime(timeId, timeDisplay) {
+            bookingState.selectedTime = timeId;
+            addUserMessage(`Selected: ${timeDisplay}`);
+            
+            let serviceTypeHtml = 'What type of service would you like?<br><br>';
+            serviceTypeHtml += '<div class="button-grid">';
+            serviceTypeHtml += '<button class="action-button" onclick="selectServiceTypeQuick(\'injectable\')">Injectable Treatments</button>';
+            serviceTypeHtml += '<button class="action-button" onclick="selectServiceTypeQuick(\'skincare\')">Skincare Services</button>';
+            serviceTypeHtml += '</div>';
+            
+            addMessage(serviceTypeHtml);
+        }
+
+        async function selectServiceTypeQuick(type) {
+            bookingState.serviceType = type;
+            addUserMessage(type === 'injectable' ? 'Injectable Treatments' : 'Skincare Services');
+            
+            addMessage('Perfect! Let me collect your information to complete the booking.');
+            showClientInfoForm();
+        }
+
+        function startFlowC() {
+            currentFlow = 'C';
+            currentStep = 1;
+            bookingState = { locationId: null, staffId: null, serviceType: null, serviceId: null, cartId: null, selectedDate: null, selectedTime: null, clientInfo: {} };
+            
+            let staffHtml = 'Select a staff member to view their full calendar:<br><br>';
+            staffHtml += '<div class="button-grid single-column">';
+            STAFF_MEMBERS.forEach(staff => {
+                staffHtml += `<button class="action-button" onclick="selectStaffCalendar('${staff.id}')">${staff.name}<br><small>${staff.speciality}</small></button>`;
+            });
+            staffHtml += '</div>';
+            
+            addMessage(staffHtml);
+        }
+
+        async function selectStaffCalendar(staffId) {
+            bookingState.staffId = staffId;
+            const staff = STAFF_MEMBERS.find(s => s.id === staffId);
+            addUserMessage(`Selected: ${staff.name}`);
+            
+            const loading = showLoading();
+            
+            try {
+                // Set location to staff's primary location
+                bookingState.locationId = staff.locationId;
+                bookingState.cartId = await createCart(bookingState.locationId);
+                
+                hideLoading(loading);
+                showCalendarForStaff(staffId);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to load calendar.', 'selectStaffCalendar(\'' + staffId + '\')');
+            }
+        }
+
+        function showCalendarForStaff(staffId) {
+            const staff = STAFF_MEMBERS.find(s => s.id === staffId);
+            
+            let calendarHtml = `Select a date from ${staff.name}'s calendar:<br><br>`;
+            
+            // Generate calendar for current month
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const startCalendar = new Date(firstDay);
+            startCalendar.setDate(startCalendar.getDate() - firstDay.getDay());
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            calendarHtml += `<div style="text-align: center; margin-bottom: 15px; font-weight: 600;">${monthNames[currentMonth]} ${currentYear}</div>`;
+            
+            calendarHtml += '<div class="calendar-grid">';
+            
+            // Headers
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                calendarHtml += `<div class="calendar-header">${day}</div>`;
+            });
+            
+            // Calendar days
+            const currentDate = new Date(startCalendar);
+            for (let i = 0; i < 42; i++) {
+                const dayNum = currentDate.getDate();
+                const isCurrentMonth = currentDate.getMonth() === currentMonth;
+                const isPast = currentDate < today;
+                const isAvailable = isCurrentMonth && !isPast && Math.random() > 0.3; // Mock availability
+                
+                let dayClass = 'calendar-day';
+                if (!isCurrentMonth || isPast) {
+                    dayClass += ' disabled';
+                } else if (isAvailable) {
+                    dayClass += ' available';
+                }
+                
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const clickHandler = isAvailable ? `onclick="selectCalendarDate('${dateStr}', '${staffId}')"` : '';
+                
+                calendarHtml += `<div class="${dayClass}" ${clickHandler}>${dayNum}</div>`;
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            calendarHtml += '</div>';
+            
+            addMessage(calendarHtml);
+        }
+
+        async function selectCalendarDate(dateStr, staffId) {
+            bookingState.selectedDate = dateStr;
+            const date = new Date(dateStr);
+            addUserMessage(`Selected: ${date.toLocaleDateString()}`);
+            
+            const loading = showLoading();
+            
+            try {
+                const availableSlots = await getStaffAvailability(staffId, dateStr);
+                
+                hideLoading(loading);
+                
+                if (availableSlots.length === 0) {
+                    addMessage('No available time slots for this date. Please select another date.');
+                    return;
+                }
+                
+                let slotsHtml = 'Available time slots:<br><br>';
+                slotsHtml += '<div class="time-slots">';
+                availableSlots.forEach(slot => {
+                    slotsHtml += `<button class="time-slot" onclick="selectTimeSlot('${slot.id}', '${slot.startTime}')">${slot.startTime}</button>`;
+                });
+                slotsHtml += '</div>';
+                
+                addMessage(slotsHtml);
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to load available times.', 'selectCalendarDate(\'' + dateStr + '\', \'' + staffId + '\')');
+            }
+        }
+
+        async function selectTimeSlot(slotId, timeStr) {
+            bookingState.selectedTime = slotId;
+            addUserMessage(`Selected: ${timeStr}`);
+            
+            const loading = showLoading();
+            
+            try {
+                await reserveSlot(bookingState.cartId, slotId);
+                
+                hideLoading(loading);
+                
+                addMessage('Time slot reserved! Now let me collect your information to complete the booking.');
+                showClientInfoForm();
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to reserve time slot.', 'selectTimeSlot(\'' + slotId + '\', \'' + timeStr + '\')');
+            }
+        }
+
+        function showClientInfoForm() {
+            let formHtml = `
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" class="form-input" id="clientName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address *</label>
+                    <input type="email" class="form-input" id="clientEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input type="tel" class="form-input" id="clientPhone" placeholder="Enter your phone number" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Special Requests (Optional)</label>
+                    <input type="text" class="form-input" id="clientNotes" placeholder="Any special requests or notes">
+                </div>
+                <div class="button-grid" style="margin-top: 20px;">
+                    <button class="action-button" onclick="completeBookingProcess()">Complete Booking</button>
+                </div>
+            `;
+            
+            addMessage(formHtml);
+        }
+
+        async function completeBookingProcess() {
+            // Validate form
+            const name = document.getElementById('clientName').value.trim();
+            const email = document.getElementById('clientEmail').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const notes = document.getElementById('clientNotes').value.trim();
+            
+            // Clear previous errors
+            document.querySelectorAll('.form-input').forEach(input => {
+                input.classList.remove('error');
+            });
+            
+            let hasError = false;
+            
+            if (!name) {
+                document.getElementById('clientName').classList.add('error');
+                hasError = true;
+            }
+            
+            if (!email || !email.includes('@')) {
+                document.getElementById('clientEmail').classList.add('error');
+                hasError = true;
+            }
+            
+            if (!phone) {
+                document.getElementById('clientPhone').classList.add('error');
+                hasError = true;
+            }
+            
+            if (hasError) {
+                showError('Please fill in all required fields correctly.');
+                return;
+            }
+            
+            bookingState.clientInfo = { name, email, phone, notes };
+            
+            addUserMessage('Information submitted');
+            
+            const loading = showLoading();
+            
+            try {
+                await updateCartWithClientInfo(bookingState.cartId, bookingState.clientInfo);
+                const result = await completeBooking(bookingState.cartId);
+                
+                hideLoading(loading);
+                
+                if (result.success) {
+                    addMessage(`
+                        <div class="success-message">
+                            <h3>🎉 Booking Confirmed!</h3>
+                            <p>Your appointment has been successfully booked.</p>
+                            <p><strong>Confirmation ID:</strong> ${result.appointmentId || 'BK' + Date.now()}</p>
+                            <p>You'll receive a confirmation email shortly.</p>
+                        </div>
+                    `);
+                    
+                    // Reset for new booking
+                    setTimeout(() => {
+                        addMessage(`
+                            Ready to book another appointment?<br><br>
+                            <div class="button-grid">
+                                <button class="action-button" onclick="location.reload()">New Booking</button>
+                            </div>
+                        `);
+                    }, 3000);
+                } else {
+                    showError('Booking failed. Please try again.', 'completeBookingProcess()');
+                }
+            } catch (error) {
+                hideLoading(loading);
+                showError('Failed to complete booking. Please try again.', 'completeBookingProcess()');
+            }
+        }
+
+        // Initialize the chat
+        function initializeChat() {
+            addMessage(`
+                Welcome! I'm here to help you book your appointment. Choose how you'd like to get started:<br><br>
+                <div class="button-grid single-column">
+                    <button class="action-button" onclick="startFlowA()">📍 Choose Location First<br><small>Browse services by location</small></button>
+                    <button class="action-button" onclick="startFlowB()">⚡ Quick Staff Booking<br><small>See next available times</small></button>
+                    <button class="action-button" onclick="startFlowC()">📅 Full Staff Calendar<br><small>View complete availability</small></button>
+                </div>
+            `);
+        }
+
+        // Start the chat when page loads
+        document.addEventListener('DOMContentLoaded', initializeChat);
+    </script>
 </body>
 </html>
